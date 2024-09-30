@@ -18,7 +18,7 @@ const paymentSchema = new mongoose.Schema({
     },
     method: {
         type: String,
-        enum: ['credit_card', 'paypal'], // Add more payment methods as needed
+        enum: ['credit_card', 'Mobile Wallet'], // Add more payment methods as needed
         required: true
     },
     contentType: {
@@ -30,6 +30,18 @@ const paymentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         refPath: 'contentType',
         required: true
+    },
+    paymobOrderId: { // Paymob-specific field for storing Paymob order ID
+        type: String,
+    },
+    paymobPaymentKey: { // Paymob-specific field for storing Paymob payment key
+        type: String,
+    },
+    paymobTransactionId: { // Paymob-specific field for storing Paymob transaction ID
+        type: String,
+    },
+    paymobResponse: { // Store the full response from Paymob
+        type: mongoose.Schema.Types.Mixed,
     },
     created_at: {
         type: Date,

@@ -1,10 +1,10 @@
 const express = require('express');
 const router=express.Router();
 
-const { addStudent } = require('../../Controllers/Admin/UserMangement/StudentMangement'); 
-const { getAllStudents } = require('../../Controllers/Admin/UserMangement/StudentMangement');
-const { updateStudent } = require('../../Controllers/Admin/UserMangement/StudentMangement');
-const { deleteStudent } = require('../../Controllers/Admin/UserMangement/StudentMangement');
+const { addStudent } = require('../../Controllers/Admin/UserManagement/StudentManagement'); 
+const { getAllStudents } = require('../../Controllers/Admin/UserManagement/StudentManagement');
+const { updateStudent } = require('../../Controllers/Admin/UserManagement/StudentManagement');
+const { deleteStudent } = require('../../Controllers/Admin/UserManagement/StudentManagement');
 const { adminMiddleware } = require('../../Middleware/Admin');
 const { authenticateUser } = require('../../Middleware/Auth'); // Adjust the path as necessary
 

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -6,7 +7,7 @@ const userSchema = new mongoose.Schema({
         unique: true,
         minlength: [3, 'Username is too short'],
         maxlength: [20, 'Username is too long'],
-        trim: true,//to handle name before save from leading and trailing whitespaces
+        trim: true, // To handle name before save from leading and trailing whitespaces
     },
     email: {
         type: String,
@@ -14,12 +15,22 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
         lowercase: true,
-        match: [/^\S+@\S+.\S+$/, 'Please enter a valid email address'],// checks if the email has a valid format
+        match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'], // Checks if the email has a valid format
     },
     password: {
         type: String,
         required: true,
         minlength: [6, 'Password is too short'],
+    },
+    firstName: {
+        type: String,
+        required: true, // First name is now required
+        trim: true, // Handles leading and trailing whitespaces
+    },
+    lastName: {
+        type: String,
+        required: true, // Last name is now required
+        trim: true, // Handles leading and trailing whitespaces
     },
     role: {
         type: String,
@@ -30,31 +41,60 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
+    address: {
+        apartment: {
+            type: String,
+            default: 'NA',
+        },
+        floor: {
+            type: String,
+            default: 'NA',
+        },
+        building: {
+            type: String,
+            default: 'NA',
+        },
+        street: {
+            type: String,
+            default: 'NA',
+        },
+        city: {
+            type: String,
+            default: 'NA',
+        },
+        state: {
+            type: String,
+            default: 'NA',
+        },
+        zip_code: {
+            type: String,
+            default: 'NA',
+        },
+        country: {
+            type: String,
+            default: 'NA',
+        },
+    },
     token: {
-        type: String
+        type: String,
     },
     image: {
         public_id: {
             type: String,
-            required: false
         },
         url: {
-            
             type: String,
-            required: false
-        }
+        },
     },
-created_at: {
-    type: Date,
-    default: Date.now
-},
-updated_at: {
-    type: Date,
-    default: Date.now
-}
-    // Add more fields as needed for your user model
-    // ...
-},);
+    created_at: {
+        type: Date,
+        default: Date.now,
+    },
+    updated_at: {
+        type: Date,
+        default: Date.now,
+    },
+});
 
 const User = mongoose.model('User', userSchema);
 

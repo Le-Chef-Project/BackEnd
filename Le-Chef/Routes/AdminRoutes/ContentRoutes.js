@@ -1,20 +1,20 @@
 const express = require('express');
 const router=express.Router();
 const upload = require('../../uploads/uploads');
-const { AddNote } = require('../../Controllers/Admin/Content/NotesController'); 
-const { getAllNotes } = require('../../Controllers/Admin/Content/NotesController');
-const { updateNote } = require('../../Controllers/Admin/Content/NotesController'); 
-const { deleteNote } = require('../../Controllers/Admin/Content/NotesController'); 
+const { AddNote } = require('../../Controllers/Admin/ContentManagement/NotesController'); 
+const { getAllNotes } = require('../../Controllers/Admin/ContentManagement/NotesController');
+const { updateNote } = require('../../Controllers/Admin/ContentManagement/NotesController'); 
+const { deleteNote } = require('../../Controllers/Admin/ContentManagement/NotesController'); 
 
 
 
-const { createPDF } = require('../../Controllers/Admin/Content/PdfController'); 
-const { getAllPDFs } = require('../../Controllers/Admin/Content/PdfController'); 
-const { deletePDF } = require('../../Controllers/Admin/Content/PdfController'); 
+const { createPDF } = require('../../Controllers/Admin/ContentManagement/PdfController'); 
+const { getAllPDFs } = require('../../Controllers/Admin/ContentManagement/PdfController'); 
+const { deletePDF } = require('../../Controllers/Admin/ContentManagement/PdfController'); 
 const { adminMiddleware } = require('../../Middleware/Admin');
 
 
-const {UploadVideo, getAllVideos, getVideoById, updateVideo, deleteVideo } = require('../../Controllers/Admin/Content/VideoConroller'); 
+const {UploadVideo, getAllVideos, getVideoById, updateVideo, deleteVideo } = require('../../Controllers/Admin/ContentManagement/VideoConroller'); 
 
 
 router.route('/Notes').post(adminMiddleware,AddNote);
