@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // Function to add a new user (student)
 exports.addStudent = async (req, res) => {
     try {
-        const { username, email, password, phone, role } = req.body;
+        const { username, email, password, phone, role ,firstName,lastName} = req.body;
 
 
         
@@ -18,6 +18,8 @@ exports.addStudent = async (req, res) => {
             password,
             phone,
             role: role || 'user', // Default to 'user' if no role is provided
+            firstName,
+            lastName,
             
             
         });
