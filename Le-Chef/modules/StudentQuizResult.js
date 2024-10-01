@@ -41,6 +41,11 @@ const studentQuizResultSchema = new mongoose.Schema({
         type: Number, // Number of correct answers
         required: true,
     },
+    startTime: { // New field to track when the student started the quiz
+        type: Date,
+        required: true,
+        default: Date.now, // When the quiz result is created, this field is set to the current time
+    },
     completedAt: {
         type: Date,
         default: Date.now,
