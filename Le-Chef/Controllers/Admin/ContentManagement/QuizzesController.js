@@ -3,12 +3,13 @@ const mongoose = require('mongoose');
 
 exports.AddQuiz = async (req, res) => {
     try {
-        const { title, questions, teacher, duration, startAt } = req.body;
+        const { title, questions, teacher, duration, startAt, endAt } = req.body;
 
-        // Automatically calculate endAt based on startAt and duration
-        const endAt = new Date(new Date(startAt).getTime() + duration * 60000);
+        // Convert startAt and endAt to full date objects for the availability window
+        const startDate = new Date(startAt); // Exam start date (availability window start)
+        const endDate = new Date(endAt); // Exam end date (availability window end)
 
-        // Constructing the quiz object
+        // Construct the quiz object with availability window and duration for students
         const quiz = new Quiz({
             title,
             questions: questions.map(q => ({
@@ -17,13 +18,24 @@ exports.AddQuiz = async (req, res) => {
                 answer: q.answer
             })),
             teacher: new mongoose.Types.ObjectId(teacher),
-            duration,
-            startAt: new Date(startAt),
-            endAt // Automatically set endAt
+            duration, // Time limit for students once they begin the exam
+            startAt: startDate,  // Exam availability window start
+            endAt: endDate // Exam availability window end
         });
 
         await quiz.save();
         res.status(201).json(quiz);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+
+
+exports.getAllQuizzes = async (req, res) => {
+    try {
+        const quizzes = await Quiz.find().populate('teacher', 'username email');
+        res.status(200).json(quizzes);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
