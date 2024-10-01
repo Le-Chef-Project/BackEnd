@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 exports.submitQuiz = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // Quiz ID
         const { answers } = req.body;
         const studentId = req.user._id; // Extract student ID from token
 
@@ -19,7 +19,7 @@ exports.submitQuiz = async (req, res) => {
             return res.status(404).json({ message: 'Quiz not found' });
         }
 
-        // Check if the student has already solved this quiz
+        // Check if the student has already submitted this quiz
         const existingResult = await StudentQuizResult.findOne({
             student: studentId,
             quiz: id,
@@ -29,13 +29,32 @@ exports.submitQuiz = async (req, res) => {
             return res.status(400).json({ message: 'Quiz already submitted by this student' });
         }
 
-        // Validate the submission time
-       /* const now = new Date();
-        if (now < quiz.startAt || now > quiz.endAt) {
-            return res.status(400).json({ message: 'Quiz is not currently available' });
-        }*/
+        // Check if a quiz result already exists (i.e., the student started the quiz)
+        let studentQuizResult = await StudentQuizResult.findOne({
+            student: studentId,
+            quiz: id,
+        });
 
-        // Calculate results
+        if (!studentQuizResult) {
+            // First time the student is submitting, set the start time to now
+            studentQuizResult = new StudentQuizResult({
+                student: new mongoose.Types.ObjectId(studentId),
+                quiz: new mongoose.Types.ObjectId(id),
+                startTime: Date.now(), // Record the start time when the student first starts the quiz
+            });
+        }
+
+        // Calculate elapsed time since the quiz started
+        const now = new Date();
+        const startTime = new Date(studentQuizResult.startTime);
+        const elapsedMinutes = (now - startTime) / 60000; // Convert milliseconds to minutes
+
+        // Check if the elapsed time exceeds the quiz duration
+        if (elapsedMinutes > quiz.duration) {
+            return res.status(400).json({ message: 'Time is up! You have exceeded the quiz duration.' });
+        }
+
+        // Continue with calculating the results...
         const totalQuestions = quiz.questions.length;
         let correctAnswers = 0;
         let wrongAnswers = 0;
@@ -62,22 +81,21 @@ exports.submitQuiz = async (req, res) => {
         // Calculate unansweredQuestions based on totalQuestions and counts
         unansweredQuestions = totalQuestions - (correctAnswers + wrongAnswers);
 
-        // Create and save the student's quiz result
-        const studentQuizResult = new StudentQuizResult({
-            student: new mongoose.Types.ObjectId(studentId),
-            quiz: new mongoose.Types.ObjectId(id),
-            answers,
-            correctAnswers,
-            wrongAnswers,
-            totalQuestions,
-            unansweredQuestions,
-            score: correctAnswers, // Number of correct answers
-        });
+        // Update the student's quiz result
+        studentQuizResult.answers = answers;
+        studentQuizResult.correctAnswers = correctAnswers;
+        studentQuizResult.wrongAnswers = wrongAnswers;
+        studentQuizResult.totalQuestions = totalQuestions;
+        studentQuizResult.unansweredQuestions = unansweredQuestions;
+        studentQuizResult.score = correctAnswers;  // Number of correct answers
+         // Store the completion time
 
+        // Save the quiz result
         await studentQuizResult.save();
+
         res.status(201).json({
             message: 'Quiz submitted successfully',
-            score: `${correctAnswers}/${totalQuestions}`, // Format for response
+            score: `${correctAnswers}/${totalQuestions}`,  // Format for response
             correctAnswers,
             wrongAnswers,
             totalQuestions,
