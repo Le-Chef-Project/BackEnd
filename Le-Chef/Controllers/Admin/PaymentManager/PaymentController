@@ -1,4 +1,8 @@
 const Payment = require('../../../modules/PaymentModule');
+const Video = require('../../../modules/VideosModule');
+const Quiz = require('../../../modules/QuizzesModule');
+
+
 const mongoose = require('mongoose');
 const paymobService = require('../../../Services/paymobService');
 const Order = require('../../../modules/OrderModule'); // Ensure the path to your Order model is correct
@@ -24,7 +28,7 @@ exports.initiatePayment = async (req, res) => {
     // Save order to the database
     const newOrder = new Order({
       orderId: order.id,
-      amount: amountInCents,
+      amount: parseFloat(amount),  // Store the amount in EGP, not cents
       currency: "EGP",
       billingData: billingData,
       authToken: authToken
@@ -45,63 +49,199 @@ exports.initiatePayment = async (req, res) => {
 };
 
 
+
+/*
+
 exports.initiateCreditCardPayment = async (req, res) => {
-    try {
-        // Extract and verify token
-        const token = req.headers.token;
-        if (!token) return res.status(401).json({ message: 'No token provided' });
+  try {
+      // Extract and verify token
+      const token = req.headers.token;
+      if (!token) return res.status(401).json({ message: 'No token provided' });
 
-        // Verify and decode the token
-        const decodedToken = jwt.verify(token, 'your_secret_key'); // Ensure this matches your .env secret
-        console.log('Decoded Token:', decodedToken); // Debugging line
+      // Verify and decode the token
+      const decodedToken = jwt.verify(token, 'your_secret_key'); // Ensure this matches your .env secret
+      console.log('Decoded Token:', decodedToken); // Debugging line
 
-        const userId = decodedToken._id; // Extract the user ID from the decoded token (use _id instead of id)
-        const { amount, contentId } = req.body;
+      const userId = decodedToken._id; // Extract the user ID from the decoded token (use _id instead of id)
+      const { amount, contentId } = req.body;
 
-        // Validate input
-        if (!userId || !amount || !contentId) {
-            console.log('User ID:', userId); // Debugging line
-            console.log('Amount:', amount); // Debugging line
-            console.log('Content ID:', contentId); // Debugging line
-            return res.status(400).json({ message: 'User ID, amount, and content ID are required' });
-        }
+      // Validate input
+      if (!userId || !amount || !contentId) {
+          console.log('User ID:', userId); // Debugging line
+          console.log('Amount:', amount); // Debugging line
+          console.log('Content ID:', contentId); // Debugging line
+          return res.status(400).json({ message: 'User ID, amount, and content ID are required' });
+      }
 
-        // Convert amount to cents (for Paymob)
-        const amountInCents = parseFloat(amount) * 100;   
-        if (isNaN(amountInCents)) {
-            return res.status(400).json({ message: 'Invalid amount' });
-        }
+      // Convert amount to cents (for Paymob)
+      const amountInCents = parseFloat(amount) * 100;   
+      if (isNaN(amountInCents)) {
+          return res.status(400).json({ message: 'Invalid amount' });
+      }
 
-        // Get the user by ID
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+      // Get the user by ID
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
 
-        // Step 1: Create credit card payment
-        const paymentResult = await paymobService.createCreditCardPayment(userId, amountInCents);
+      // Determine content type from contentId
+      let contentType;
+      const video = await Video.findById(contentId);  // Assuming Video is a model
+      if (video) {
+          contentType = 'video';
+      } else {
+          const quiz = await Quiz.findById(contentId);  // Assuming Quiz is a model
+          if (quiz) {
+              contentType = 'quiz';
+          }
+      }
 
-        // Step 2: Save payment details in the database
-        const payment = new Payment({
-            user: userId,
-            amount: amountInCents,
-            status: 'pending',
-            method: 'credit_card',
-            contentType: 'video', // Example, can be quiz or video
-            contentId: contentId, // Use contentId from request body
-            paymobOrderId: paymentResult.orderId,
-            paymobPaymentKey: paymentResult.paymentToken,
-            
-        });
+      // If content not found in any of the models
+      if (!contentType) {
+          return res.status(404).json({ message: 'Content not found' });
+      }
 
-        await payment.save();
+      // Step 1: Create credit card payment
+      const paymentResult = await paymobService.createCreditCardPayment(userId, amountInCents);
 
-        // Return the payment URL for frontend to redirect to
-        res.json({ paymentURL: paymentResult.paymentURL  , status: paymentResult.paymentStatus });
-    } catch (error) {
-        console.error('Credit card payment initiation failed:', error);
-        res.status(500).json({ message: 'Payment initiation failed', error: error.message });
-    }
+      // Step 2: Save payment details in the database
+      const payment = new Payment({
+          user: userId,
+          amount: parseFloat(amount),  // Store the amount in EGP, not cents
+          status: 'pending',
+          method: 'credit_card',
+          contentType: contentType, // Dynamically set content type
+          contentId: contentId,     // Use contentId from request body
+          paymobOrderId: paymentResult.orderId,
+          paymobPaymentKey: paymentResult.paymentToken,
+      });
+
+      await payment.save();
+
+      // Return the payment URL for frontend to redirect to
+      res.json({ paymentURL: paymentResult.paymentURL, status: paymentResult.paymentStatus });
+  } catch (error) {
+      console.error('Credit card payment initiation failed:', error);
+      res.status(500).json({ message: 'Payment initiation failed', error: error.message });
+  }
 };
 
 
+
+*/
+
+
+exports.initiateCreditCardPayment = async (req, res) => {
+  try {
+    // Extract and verify token
+    const token = req.headers.token;
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    // Verify and decode the token
+    const decodedToken = jwt.verify(token, 'your_secret_key');  // Ensure this matches your .env secret
+    console.log('Decoded Token:', decodedToken);
+
+    const userId = decodedToken._id;  // Extract the user ID from the decoded token
+    const { amount, contentId } = req.body;
+
+    // Validate input
+    if (!userId || !amount || !contentId) {
+      return res.status(400).json({ message: 'User ID, amount, and content ID are required' });
+    }
+
+    // Convert amount to cents (for Paymob)
+    const amountInCents = parseFloat(amount) * 100;
+    if (isNaN(amountInCents)) {
+      return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    // Get the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+
+    }
+
+    // Determine content type from contentId
+    let contentType;
+    const video = await Video.findById(contentId);  // Assuming Video is a model
+    if (video) {
+        contentType = 'video';
+    } else {
+        const quiz = await Quiz.findById(contentId);  // Assuming Quiz is a model
+        if (quiz) {
+            contentType = 'quiz';
+        }
+    }
+
+    // If content not found in any of the models
+    if (!contentType) {
+        return res.status(404).json({ message: 'Content not found' });
+    }
+
+
+
+    // Step 1: Create credit card payment
+    const paymentResult = await paymobService.createCreditCardPayment(userId, amountInCents);
+
+    // Step 2: Save payment details in the database (store the amount in EGP)
+    const payment = new Payment({
+      user: userId,
+      amount: parseFloat(amount),  // Store the amount in EGP, not cents
+      status: 'pending',  // Initial status is pending
+      method: 'credit_card',
+      contentType: contentType, // Dynamically set content type
+      contentId: contentId,     // Use contentId from request body
+      paymobOrderId: paymentResult.orderId,
+      paymobPaymentKey: paymentResult.paymentToken,
+      paymobTransactionId: paymentResult.transactionId,  // Store Paymob transaction ID
+      paymobResponse: paymentResult  // Store the full response from Paymob for reference
+    });
+
+    await payment.save();
+
+
+    // Return the payment URL for frontend to redirect to (if necessary)
+    res.json({ paymentURL: paymentResult.paymentURL, status: payment.status });
+  } catch (error) {
+    console.error('Credit card payment initiation failed:', error);
+    res.status(500).json({ message: 'Payment initiation failed', error: error.message });
+  }
+};
+
+
+
+
+exports.handlePaymobCallback = async (req, res) => {
+  try {
+      // Extract the necessary information from the Paymob callback payload
+      const { transaction_id, success, pending, failed } = req.body;
+
+      // Find the payment in your database using the Paymob transaction ID
+      const payment = await Payment.findOne({ paymobTransactionId: transaction_id });
+
+      // If payment is not found in the database, return a 404 error
+      if (!payment) {
+          return res.status(404).json({ message: 'Payment not found' });
+      }
+
+      // Update the payment status based on the Paymob callback response
+      if (success) {
+          payment.status = 'success';
+      } else if (failed) {
+          payment.status = 'failed';
+      } else if (pending) {
+          payment.status = 'pending';
+      }
+
+      // Save the updated payment status in your database
+      await payment.save();
+
+      // Respond to Paymob to acknowledge receipt of the callback
+      res.status(200).json({ message: 'Payment status updated successfully' });
+  } catch (error) {
+      console.error('Paymob callback handling failed:', error);
+      res.status(500).json({ message: 'Payment status update failed', error: error.message });
+  }
+};
