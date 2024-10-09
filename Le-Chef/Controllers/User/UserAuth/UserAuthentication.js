@@ -13,8 +13,14 @@ exports.loginUser = async (req, res) => {
             return res.status(400).json({ message: 'Email not found!' });
         }
 
+        // Check if the password matches
         if (password) {
-            res.status(200).json({ message: 'Logged in successfully!', token: user.token });
+            // Return a success message, the token, and the user's role
+            res.status(200).json({ 
+                message: 'Logged in successfully!', 
+                token: user.token, 
+                role: user.role 
+            });
         } else {
             res.status(400).json({ message: 'Incorrect password!' });
         }
