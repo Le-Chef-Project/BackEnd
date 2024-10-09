@@ -4,13 +4,23 @@ const jwt = require('jsonwebtoken');
 
 
 // Function to add a new user (student)
+
 exports.addStudent = async (req, res) => {
     try {
-        const { username, email, password, phone, role ,firstName,lastName} = req.body;
+        const { username, email, password, phone, role, firstName, lastName } = req.body;
 
+        // Check if username already exists
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
 
-        
-        
+        // Check if email already exists
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+
         // Create a new student
         const student = new User({
             username,
@@ -20,21 +30,20 @@ exports.addStudent = async (req, res) => {
             role: role || 'user', // Default to 'user' if no role is provided
             firstName,
             lastName,
-            
-            
         });
 
         // Generate token
         const token = jwt.sign({ _id: student._id, role: student.role }, 'your_secret_key'); // Replace 'your_secret_key' with your actual secret key
-        // Save token to user document
         student.token = token;
 
+        // Save student to the database
         await student.save();
         res.status(201).json(student);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 
 exports.getAllStudents = async (req, res) => {
