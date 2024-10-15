@@ -35,14 +35,7 @@ exports.AddQuiz = async (req, res) => {
 
 
 
-exports.getAllQuizzes = async (req, res) => {
-    try {
-        const quizzes = await Quiz.find().populate('teacher', 'username email');
-        res.status(200).json(quizzes);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-};
+
 
 
 exports.getAllQuizzes = async (req, res) => {
@@ -53,21 +46,23 @@ exports.getAllQuizzes = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 
 
 exports.updateQuiz = async (req, res) => {
     try {
-        const { title, questions, teacher, duration, startAt, endAt } = req.body;
+        const { title, questions, teacher, hours , minutes} = req.body;
         const updatedQuiz = await Quiz.findByIdAndUpdate(
             req.params.id,
             {
                 title,
                 questions,
                 teacher: new mongoose.Types.ObjectId(teacher),
-                duration,
-                startAt,
-                endAt,
+                duration: {
+                    hours: parseInt(hours),
+                    minutes: parseInt(minutes),
+                },
                 updatedAt: Date.now()
             },
             { new: true } // Return the updated document
