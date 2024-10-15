@@ -185,6 +185,12 @@ exports.initiateCreditCardPayment = async (req, res) => {
     // Step 1: Create credit card payment
     const paymentResult = await paymobService.createCreditCardPayment(userId, amountInCents);
 
+
+
+    console.log('Payment Result:', paymentResult);
+
+    const transactionId = paymentResult.transactionId || paymentResult.data?.transaction_id || paymentResult?.transaction_id;
+
     // Step 2: Save payment details in the database (store the amount in EGP)
     const payment = new Payment({
       user: userId,
@@ -196,6 +202,8 @@ exports.initiateCreditCardPayment = async (req, res) => {
       paymobOrderId: paymentResult.orderId,
       paymobPaymentKey: paymentResult.paymentToken,
       paymobTransactionId: paymentResult.transactionId,  // Store Paymob transaction ID
+
+      
       paymobResponse: paymentResult  // Store the full response from Paymob for reference
     });
 
@@ -215,33 +223,75 @@ exports.initiateCreditCardPayment = async (req, res) => {
 
 exports.handlePaymobCallback = async (req, res) => {
   try {
-      // Extract the necessary information from the Paymob callback payload
-      const { transaction_id, success, pending, failed } = req.body;
+      console.log('Received callback:', req.method, req.body);
 
-      // Find the payment in your database using the Paymob transaction ID
-      const payment = await Payment.findOne({ paymobTransactionId: transaction_id });
+      // Extract order ID based on the request method
+      const orderId = req.method === 'POST' ? req.body.obj?.order?.id : req.query.order;
 
-      // If payment is not found in the database, return a 404 error
+      console.log("Received order ID:", orderId);
+
+      // Validate order ID
+      if (!orderId) {
+          return res.status(400).json({ message: 'Order ID is missing' });
+      }
+
+      // Find the payment record based on order ID
+      const payment = await Payment.findOne({ paymobOrderId: orderId });
+
       if (!payment) {
           return res.status(404).json({ message: 'Payment not found' });
       }
 
-      // Update the payment status based on the Paymob callback response
+      // Extract payment data based on the request method
+      const paymentData = req.method === 'POST' ? req.body.obj : req.query;
+      
+      // Convert string values to boolean
+      const success = paymentData.success === 'true';
+      const is_voided = paymentData.is_voided === 'true';
+      const pending = paymentData.pending === 'true';
+
+      // Log the values to debug
+      console.log('Payment Data:', { success, is_voided, pending });
+
+      let message;
+
+      // Determine the payment status based on the logic described
       if (success) {
-          payment.status = 'success';
-      } else if (failed) {
-          payment.status = 'failed';
+          payment.status = 'success'; // Transaction is successful
+          message = 'Payment completed successfully.';
+      } else if (is_voided) {
+          payment.status = 'failed'; // Transaction was voided
+          message = 'Payment was voided.';
       } else if (pending) {
-          payment.status = 'pending';
+          payment.status = 'pending'; // Transaction is pending
+          message = 'Payment is pending.';
+      } else {
+          payment.status = 'failed'; // Default to failed if not successful, voided, or pending
+          message = 'Payment failed.';
       }
 
-      // Save the updated payment status in your database
+      // Save the payment data along with the status
+      payment.success = success;
+
+      console.log('Updated Payment Status:', payment.status); // Log the updated status
+
       await payment.save();
 
-      // Respond to Paymob to acknowledge receipt of the callback
-      res.status(200).json({ message: 'Payment status updated successfully' });
+      // Return the specific message based on the status
+      return res.status(200).json({ message });
   } catch (error) {
       console.error('Paymob callback handling failed:', error);
-      res.status(500).json({ message: 'Payment status update failed', error: error.message });
+      return res.status(500).json({ message: 'Payment status update failed', error: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
+
+

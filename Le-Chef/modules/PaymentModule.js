@@ -13,7 +13,7 @@ const paymentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
+        enum: ['pending', 'success', 'failed'],
         default: 'pending'
     },
     method: {
@@ -47,6 +47,12 @@ const paymentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    // New fields to store the payment status
+    success: {
+        type: Boolean,
+        default: false,
+    },
+    
 }, {
     timestamps: true // This will automatically add createdAt and updatedAt fields
 });
