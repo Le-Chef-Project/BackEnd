@@ -25,16 +25,17 @@ const quizSchema = new mongoose.Schema({
     required: true,
   },
   duration: {
-    type: Number, // Duration in minutes
-    required: true,
-  },
-  startAt: {
-    type: Date,
-    required: true,
-  },
-  endAt: {
-    type: Date,
-    required: true,
+    hours: {
+      type: Number,
+      required: true,
+      min: 0, // Hours can't be negative
+    },
+    minutes: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 59, // Minutes should be between 0 and 59
+    },
   },
   createdAt: {
     type: Date,
@@ -42,14 +43,6 @@ const quizSchema = new mongoose.Schema({
   },
 });
 
-/*quizSchema.pre('save', function(next) {
-  // Automatically set the end time based on the start time and duration
-  if (this.startAt && this.duration) {
-    this.endAt = new Date(this.startAt.getTime() + this.duration * 60000);
-  }
-  next();
-});
-*/
 const Quiz = mongoose.model('Quiz', quizSchema);
 
 module.exports = Quiz;

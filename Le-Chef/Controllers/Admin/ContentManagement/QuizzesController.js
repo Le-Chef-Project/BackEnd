@@ -1,15 +1,17 @@
 const Quiz = require('../../../modules/QuizzesModule');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 
 exports.AddQuiz = async (req, res) => {
     try {
-        const { title, questions, teacher, duration, startAt, endAt } = req.body;
+        const { title, questions, hours, minutes } = req.body;
 
-        // Convert startAt and endAt to full date objects for the availability window
-        const startDate = new Date(startAt); // Exam start date (availability window start)
-        const endDate = new Date(endAt); // Exam end date (availability window end)
+        // Extract the token from the request headers
+        const token = req.headers.token
+        const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
+        const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
 
-        // Construct the quiz object with availability window and duration for students
+        // Construct the quiz object with hours, minutes, and teacher's ID from the token
         const quiz = new Quiz({
             title,
             questions: questions.map(q => ({
@@ -17,10 +19,11 @@ exports.AddQuiz = async (req, res) => {
                 options: q.options,
                 answer: q.answer
             })),
-            teacher: new mongoose.Types.ObjectId(teacher),
-            duration, // Time limit for students once they begin the exam
-            startAt: startDate,  // Exam availability window start
-            endAt: endDate // Exam availability window end
+            teacher: teacherId, // Use the teacher's existing ID from the token
+            duration: {
+                hours: parseInt(hours),
+                minutes: parseInt(minutes),
+            },
         });
 
         await quiz.save();
