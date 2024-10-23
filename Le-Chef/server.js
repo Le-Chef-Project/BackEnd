@@ -3,7 +3,6 @@ dotenv.config(); // Load environment variables first
 const express = require('express');
 const dbConnection = require('./Config/database');
 const morgan = require('morgan');
-const fileUpload = require('express-fileupload');
 const cors =require("cors");
 const http=require("http");
 const cloudinary = require('./Util/Cloudinary');
@@ -42,7 +41,6 @@ const app = express();
 app.use(express.json()); // Parse JSON requests
 
 
-app.use(fileUpload());
 
 const { Server } = require('socket.io');
 
