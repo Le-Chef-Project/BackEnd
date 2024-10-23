@@ -2,17 +2,23 @@ const mongoose = require('mongoose');
 const cloudinary = require('../../../Util/Cloudinary');
 const path = require('path'); // Import path module
 const Video = require('../../../modules/VideosModule'); // Adjust the path to your Video model
+const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
+
 
 
 // Create a new video document
 exports.UploadVideo = async (req, res) => {
     try {
-        const { title, description, teacher } = req.body;
+        const { title, description } = req.body;
         const file = req.file; // Get the uploaded file
 
         if (!file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
+
+        const token = req.headers.token;
+        const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
+        const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
 
         // Extract the original filename without extension
         const originalName = path.parse(file.originalname).name;
@@ -26,21 +32,21 @@ exports.UploadVideo = async (req, res) => {
         });
 
         // Create a new video document with the URL returned by Cloudinary
-        const teacherId = mongoose.Types.ObjectId.isValid(teacher) ? new mongoose.Types.ObjectId(teacher) : teacher;
         const newVideo = new Video({
             title,
             description,
             url: uploadResult.secure_url, // Use the Cloudinary URL for the video
-            teacher: teacherId,
-        });
+            teacher: teacherId // Use the teacher's existing ID from the token
+        }); // Correct placement of the closing brace
 
         // Save the video document to the database
-        const savedVideo = await newVideo.save();
+        const savedVideo = await newVideo.save(); // This line should now work correctly
         res.status(201).json(savedVideo);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 
 // Get all videos
