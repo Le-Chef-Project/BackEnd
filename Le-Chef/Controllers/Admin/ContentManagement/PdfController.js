@@ -2,10 +2,15 @@ const PDF = require('../../../modules/PdfModule'); // Adjust the path as needed
 const mongoose = require('mongoose');
 const cloudinary = require('../../../Util/Cloudinary');
 const path = require('path'); // Import path module
+const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
+
 // Create a new PDF document
 exports.createPDF = async (req, res) => {
     try {
-        const { title, description, teacher } = req.body;
+        const { title, description } = req.body;
+        const token = req.headers.token
+        const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
+        const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
         const file = req.file; // Get the uploaded file
 
         if (!file) {
@@ -23,7 +28,6 @@ exports.createPDF = async (req, res) => {
         });
 
         // Create a new PDF document with the URL returned by Cloudinary
-        const teacherId = mongoose.Types.ObjectId.isValid(teacher) ? new mongoose.Types.ObjectId(teacher) : teacher;
         const newPDF = new PDF({
             title,
             description,
@@ -64,12 +68,11 @@ exports.getPDFById = async (req, res) => {
 // Update a PDF by ID
 exports.updatePDF = async (req, res) => {
     try {
-        const { title, description, url, teacher } = req.body;
+        const { title, description, url } = req.body;
         const updatedPDF = await PDF.findByIdAndUpdate(req.params.id, {
             title,
             description,
             url,
-            teacher: mongoose.Types.ObjectId(teacher)
         }, { new: true });
 
         if (!updatedPDF) {

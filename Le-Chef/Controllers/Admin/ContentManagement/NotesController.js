@@ -1,16 +1,19 @@
 const noteModel = require('../../../modules/NotesModule');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 
 
 exports.AddNote = async (req, res) => {
     try {
-      const { title, content, teacher } = req.body;
+
+      const {content} = req.body;
+      const token = req.headers.token
+      const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
+      const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
       const note = new noteModel({
-        title,
         content,
-        teacher
-      });
+        teacher: teacherId })// Use the teacher's existing ID from the token});
       await note.save();
       res.status(201).json(note);
     } catch (error) {
@@ -32,13 +35,11 @@ exports.AddNote = async (req, res) => {
 
 exports.updateNote = async (req, res) => {
     try {
-        const { title, content, teacher } = req.body;
+        const { content } = req.body;
         const updatedNote = await noteModel.findByIdAndUpdate(
             req.params.id,
             {
-                title,
                 content,
-                teacher:new  mongoose.Types.ObjectId(teacher),
                 updatedAt: Date.now()
             },
             { new: true } // Return the updated document
