@@ -4,14 +4,14 @@ const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 
 exports.AddQuiz = async (req, res) => {
     try {
-        const { title, questions, hours, minutes } = req.body;
+        const { title, questions, hours, minutes, amountToPay, paid, educationLevel, Unit } = req.body;
 
         // Extract the token from the request headers
-        const token = req.headers.token
+        const token = req.headers.token;
         const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
         const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
 
-        // Construct the quiz object with hours, minutes, and teacher's ID from the token
+        // Construct the quiz object with all necessary fields
         const quiz = new Quiz({
             title,
             questions: questions.map(q => ({
@@ -24,6 +24,10 @@ exports.AddQuiz = async (req, res) => {
                 hours: parseInt(hours),
                 minutes: parseInt(minutes),
             },
+            amountToPay: paid ? parseFloat(amountToPay) : undefined, // Set amountToPay only if pay is true
+            paid: paid, // Boolean indicating if payment is required
+            educationLevel: parseInt(educationLevel), // Ensure education level is stored as a number
+            Unit: parseInt(Unit), // Ensure Unit is stored as a number
         });
 
         await quiz.save();
@@ -32,6 +36,7 @@ exports.AddQuiz = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 
 
@@ -52,17 +57,26 @@ exports.getAllQuizzes = async (req, res) => {
 
 exports.updateQuiz = async (req, res) => {
     try {
-        const { title, questions, teacher, hours , minutes} = req.body;
+        const { title, questions, teacher, hours, minutes, amountToPay, paid, educationLevel, Unit } = req.body;
+
         const updatedQuiz = await Quiz.findByIdAndUpdate(
             req.params.id,
             {
                 title,
-                questions,
+                questions: questions.map(q => ({
+                    question: q.question,
+                    options: q.options,
+                    answer: q.answer
+                })),
                 teacher: new mongoose.Types.ObjectId(teacher),
                 duration: {
                     hours: parseInt(hours),
                     minutes: parseInt(minutes),
                 },
+                amountToPay: paid ? parseFloat(amountToPay) : undefined, // Set amountTopaid only if paid is true
+                paid, // Boolean indicating if payment is required
+                educationLevel: parseInt(educationLevel), // Ensure education level is stored as a number
+                Unit: parseInt(Unit), // Ensure Unit is stored as a number
                 updatedAt: Date.now()
             },
             { new: true } // Return the updated document
@@ -77,6 +91,7 @@ exports.updateQuiz = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
 
 exports.deleteQuiz = async (req, res) => {
     try {
