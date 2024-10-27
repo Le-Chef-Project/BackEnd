@@ -37,6 +37,26 @@ const quizSchema = new mongoose.Schema({
       max: 59, // Minutes should be between 0 and 59
     },
   },
+  educationLevel: {
+    type: Number,
+    enum: [1, 2, 3], // Define levels as required
+    required: true,
+  },
+  Unit: {
+    type: Number,
+    min: 1, // Minimum value is 1
+    max: 15, // Maximum value is 15
+    required: true,
+  },
+  amountToPay: {
+    type: Number,
+    required: function() { return this.paid; }, // Required only if `pay` is true
+  },
+  paid: {
+    type: Boolean,
+    required: true,
+    default: false, // Default to false (free quiz)
+  },
   createdAt: {
     type: Date,
     default: Date.now,
