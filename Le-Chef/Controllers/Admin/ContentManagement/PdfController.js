@@ -7,8 +7,8 @@ const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 // Create a new PDF document
 exports.createPDF = async (req, res) => {
     try {
-        const { title, description } = req.body;
-        const token = req.headers.token
+        const { title, description, amountToPay, paid, educationLevel } = req.body; // Destructure new fields from request body
+        const token = req.headers.token;
         const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
         const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
         const file = req.file; // Get the uploaded file
@@ -33,6 +33,10 @@ exports.createPDF = async (req, res) => {
             description,
             url: uploadResult.secure_url, // Use the Cloudinary URL for the PDF
             teacher: teacherId,
+            amountToPay: paid ? amountToPay : undefined, // Only set amountToPay if the PDF is paid
+            paid: paid || false, // Default to false if not specified
+            isLocked: paid || true, // Lock the PDF if it's paid
+            educationLevel // Add the education level
         });
 
         // Save the PDF document to the database
@@ -42,6 +46,7 @@ exports.createPDF = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
 // Get a list of all PDFs
 exports.getAllPDFs = async (req, res) => {
     try {
