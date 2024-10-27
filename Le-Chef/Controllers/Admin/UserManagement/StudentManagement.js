@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 exports.addStudent = async (req, res) => {
     try {
-        const { username, email, password, phone, role, firstName, lastName } = req.body;
+        const { username, email, password, phone, role, firstName, lastName ,educationLevel} = req.body;
 
         // Check if username already exists
         const existingUsername = await User.findOne({ username });
@@ -30,6 +30,7 @@ exports.addStudent = async (req, res) => {
             role: role || 'user', // Default to 'user' if no role is provided
             firstName,
             lastName,
+            educationLevel,
         });
 
         // Generate token
@@ -57,7 +58,7 @@ exports.getAllStudents = async (req, res) => {
 
 exports.updateStudent = async (req, res) => {
     try {
-        const { username, email, password, phone } = req.body;
+        const { username, email, password, phone , educationLevel} = req.body;
 
         const updatedStudent = await User.findByIdAndUpdate(
             req.params.id,
@@ -66,6 +67,7 @@ exports.updateStudent = async (req, res) => {
                 email,
                 password,
                 phone,
+                educationLevel,
                 updated_at: Date.now(),
             },
             { new: true } // Return the updated document
