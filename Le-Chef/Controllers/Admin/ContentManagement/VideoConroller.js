@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 // Create a new video document
 exports.UploadVideo = async (req, res) => {
     try {
-        const { title, description } = req.body;
+        const { title, description, amountToPay, paid, educationLevel } = req.body; // Destructure new fields from request body
         const file = req.file; // Get the uploaded file
 
         if (!file) {
@@ -36,11 +36,15 @@ exports.UploadVideo = async (req, res) => {
             title,
             description,
             url: uploadResult.secure_url, // Use the Cloudinary URL for the video
-            teacher: teacherId // Use the teacher's existing ID from the token
-        }); // Correct placement of the closing brace
+            teacher: teacherId, // Use the teacher's existing ID from the token
+            amountToPay: paid ? amountToPay : undefined, // Only set amountToPay if the video is paid
+            paid: paid || true, // Default to false if not specified
+            isLocked: paid || true, // Lock the video if it's paid
+            educationLevel // Add the education level
+        });
 
         // Save the video document to the database
-        const savedVideo = await newVideo.save(); // This line should now work correctly
+        const savedVideo = await newVideo.save();
         res.status(201).json(savedVideo);
     } catch (error) {
         res.status(400).json({ error: error.message });
