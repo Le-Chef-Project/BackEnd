@@ -55,7 +55,7 @@ const quizSchema = new mongoose.Schema({
   paid: {
     type: Boolean,
     required: true,
-    default: false, // Default to false (free quiz)
+    default: true, // Default to false (free quiz)
   },
   createdAt: {
     type: Date,
