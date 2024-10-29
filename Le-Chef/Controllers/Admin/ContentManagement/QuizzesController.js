@@ -117,3 +117,24 @@ exports.getQuizById = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+
+
+
+
+exports.getUnitsWithExams = async (req, res) => {
+    try {
+        // Find all distinct units that have at least one exam
+        const unitsWithExams = await Quiz.distinct("Unit");
+
+        // Map the units to the desired format if needed
+        const unitNames = unitsWithExams.map(unit => `Unit ${unit}`);
+
+        // Respond with the unit names
+        res.status(200).json({ units: unitNames });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
