@@ -57,30 +57,29 @@ exports.getAllQuizzes = async (req, res) => {
 
 exports.updateQuiz = async (req, res) => {
     try {
-        const { title, questions, teacher, hours, minutes, amountToPay, paid, educationLevel, Unit } = req.body;
-
-        const updatedQuiz = await Quiz.findByIdAndUpdate(
-            req.params.id,
-            {
-                title,
-                questions: questions.map(q => ({
+        const updateData = {};
+        
+        // Only add fields to updateData if they are provided in the request body
+        if (req.body.title) updateData.title = req.body.title;
+        if (req.body.questions) {
+            updateData.questions = Array.isArray(req.body.questions) 
+                ? req.body.questions.map(q => ({
                     question: q.question,
                     options: q.options,
                     answer: q.answer
-                })),
-                teacher: new mongoose.Types.ObjectId(teacher),
-                duration: {
-                    hours: parseInt(hours),
-                    minutes: parseInt(minutes),
-                },
-                amountToPay: paid ? parseFloat(amountToPay) : undefined, // Set amountTopaid only if paid is true
-                paid, // Boolean indicating if payment is required
-                educationLevel: parseInt(educationLevel), // Ensure education level is stored as a number
-                Unit: parseInt(Unit), // Ensure Unit is stored as a number
-                updatedAt: Date.now()
-            },
-            { new: true } // Return the updated document
-        );
+                }))
+                : [];
+        }
+        if (req.body.teacher) updateData.teacher = new mongoose.Types.ObjectId(req.body.teacher);
+        if (req.body.hours) updateData.duration = { hours: parseInt(req.body.hours) };
+        if (req.body.minutes) updateData.duration = { ...updateData.duration, minutes: parseInt(req.body.minutes) };
+        if (req.body.amountToPay) updateData.amountToPay = parseFloat(req.body.amountToPay);
+        if (req.body.paid !== undefined) updateData.paid = req.body.paid;
+        if (req.body.educationLevel) updateData.educationLevel = parseInt(req.body.educationLevel);
+        if (req.body.Unit) updateData.Unit = parseInt(req.body.Unit);
+        updateData.updatedAt = Date.now();
+
+        const updatedQuiz = await Quiz.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
         if (!updatedQuiz) {
             return res.status(404).json({ message: 'Quiz not found' });
@@ -91,6 +90,8 @@ exports.updateQuiz = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+
 
 
 exports.deleteQuiz = async (req, res) => {
