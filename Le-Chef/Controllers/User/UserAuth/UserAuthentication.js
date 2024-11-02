@@ -19,7 +19,14 @@ exports.loginUser = async (req, res) => {
             res.status(200).json({ 
                 message: 'Logged in successfully!', 
                 token: user.token, 
-                role: user.role 
+                role: user.role,
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                educationLevel: user.educationLevel,
+                image: user.image,
+                phone: user.phone
+
             });
         } else {
             res.status(400).json({ message: 'Incorrect password!' });
