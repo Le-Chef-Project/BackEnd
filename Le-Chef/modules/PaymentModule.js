@@ -23,7 +23,7 @@ const paymentSchema = new mongoose.Schema({
     },
     contentType: {
         type: String,
-        enum: ['video', 'quiz'], // Type of content being paid for
+        enum: ['Video', 'Quiz'], // Type of content being paid for
         required: true
     },
     contentId: {

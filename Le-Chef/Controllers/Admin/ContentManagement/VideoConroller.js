@@ -83,7 +83,7 @@ exports.getVideoById = async (req, res) => {
 exports.updateVideo = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, teacher, url } = req.body;
+        const { title, description, teacher, url, amountToPay, paid, educationLevel } = req.body;
 
         // Log incoming data for debugging
         console.log('Update Request:', { id, title, description, teacher, url });
@@ -93,7 +93,10 @@ exports.updateVideo = async (req, res) => {
             title,
             description,
             teacher,
-            url
+            url,
+            amountToPay,
+            paid,
+            educationLevel
         }, { new: true, runValidators: true }); // Return the updated document and validate
 
         if (!updatedVideo) {

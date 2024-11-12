@@ -33,7 +33,7 @@ const videoSchema = new mongoose.Schema({
   },
   paid: {
     type: Boolean,
-    default: true, // Default to false (indicating the video is free)
+    default: true, 
   },
   createdAt: { 
     type: Date, 

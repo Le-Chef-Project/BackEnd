@@ -13,6 +13,8 @@ const { handlePaymobCallback } = require('../../Controllers/Admin/PaymentManager
 router.route('/paymob/payment').post(initiatePayment);
 router.route('/paymob/creditCard').post(initiateCreditCardPayment);
 router.route('/paymob/callback').post(handlePaymobCallback);
+router.route('/paymob/callback').get(handlePaymobCallback);
+
 
 
 

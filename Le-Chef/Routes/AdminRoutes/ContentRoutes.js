@@ -7,6 +7,8 @@ const { updateNote } = require('../../Controllers/Admin/ContentManagement/NotesC
 const { deleteNote } = require('../../Controllers/Admin/ContentManagement/NotesController'); 
 const { getAllNotesForUserLevel } = require('../../Controllers/Admin/ContentManagement/NotesController');
 const { userMiddleware } = require('../../Middleware/User');
+const { ContentAccess } = require('../../Middleware/UserContentAccess');
+
 
 
 
@@ -37,9 +39,9 @@ router.route('/DeletePdf/:id').delete(adminMiddleware,deletePDF);
 router.route('/videos').get(getAllVideos) // Get all videos
  .post(upload.single('video'),adminMiddleware, UploadVideo); // Upload a new video
 
-router.route('/videos/:id').get(getVideoById) // Get a video by ID
-    .put(adminMiddleware,updateVideo) // Update a video by ID
-    .delete(adminMiddleware,deleteVideo); // Delete a video by ID
-
+ router.route('/videos/:id')
+ .get(userMiddleware,ContentAccess('Video'), getVideoById) // Get a video by ID with access control
+ .put(adminMiddleware, updateVideo) // Update a video by ID
+ .delete(adminMiddleware, deleteVideo); // Delete a video by 
 
 module.exports=router;

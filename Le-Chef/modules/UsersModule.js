@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema({
     },
     educationLevel: {
         type: Number,
-        enum: [1, 2, 3], // Levels like 1, 2, 3, 4, etc.
+        enum: [1, 2, 3], // Levels like 1, 2, 3, etc.
     },
     created_at: {
         type: Date,
@@ -70,6 +70,24 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    paidContent: [
+        {
+            contentId: { 
+                type: mongoose.Schema.Types.ObjectId, 
+                required: true,
+                refPath: 'paidContent.contentType', // Dynamically refer to the model based on contentType
+            },
+            contentType: { 
+                type: String, 
+                required: true, 
+                enum: ['Video', 'PDF', 'Quiz'] // Valid options for ref models
+            },
+            purchasedAt: { 
+                type: Date, 
+                default: Date.now // Purchase date
+            },
+        },
+    ],
 });
 
 const User = mongoose.model('User', userSchema);
