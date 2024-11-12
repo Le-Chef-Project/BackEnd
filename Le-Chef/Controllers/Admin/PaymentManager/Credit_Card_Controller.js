@@ -49,89 +49,6 @@ exports.initiatePayment = async (req, res) => {
 };
 
 
-
-/*
-
-exports.initiateCreditCardPayment = async (req, res) => {
-  try {
-      // Extract and verify token
-      const token = req.headers.token;
-      if (!token) return res.status(401).json({ message: 'No token provided' });
-
-      // Verify and decode the token
-      const decodedToken = jwt.verify(token, 'your_secret_key'); // Ensure this matches your .env secret
-      console.log('Decoded Token:', decodedToken); // Debugging line
-
-      const userId = decodedToken._id; // Extract the user ID from the decoded token (use _id instead of id)
-      const { amount, contentId } = req.body;
-
-      // Validate input
-      if (!userId || !amount || !contentId) {
-          console.log('User ID:', userId); // Debugging line
-          console.log('Amount:', amount); // Debugging line
-          console.log('Content ID:', contentId); // Debugging line
-          return res.status(400).json({ message: 'User ID, amount, and content ID are required' });
-      }
-
-      // Convert amount to cents (for Paymob)
-      const amountInCents = parseFloat(amount) * 100;   
-      if (isNaN(amountInCents)) {
-          return res.status(400).json({ message: 'Invalid amount' });
-      }
-
-      // Get the user by ID
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(404).json({ message: 'User not found' });
-      }
-
-      // Determine content type from contentId
-      let contentType;
-      const video = await Video.findById(contentId);  // Assuming Video is a model
-      if (video) {
-          contentType = 'video';
-      } else {
-          const quiz = await Quiz.findById(contentId);  // Assuming Quiz is a model
-          if (quiz) {
-              contentType = 'quiz';
-          }
-      }
-
-      // If content not found in any of the models
-      if (!contentType) {
-          return res.status(404).json({ message: 'Content not found' });
-      }
-
-      // Step 1: Create credit card payment
-      const paymentResult = await paymobService.createCreditCardPayment(userId, amountInCents);
-
-      // Step 2: Save payment details in the database
-      const payment = new Payment({
-          user: userId,
-          amount: parseFloat(amount),  // Store the amount in EGP, not cents
-          status: 'pending',
-          method: 'credit_card',
-          contentType: contentType, // Dynamically set content type
-          contentId: contentId,     // Use contentId from request body
-          paymobOrderId: paymentResult.orderId,
-          paymobPaymentKey: paymentResult.paymentToken,
-      });
-
-      await payment.save();
-
-      // Return the payment URL for frontend to redirect to
-      res.json({ paymentURL: paymentResult.paymentURL, status: paymentResult.paymentStatus });
-  } catch (error) {
-      console.error('Credit card payment initiation failed:', error);
-      res.status(500).json({ message: 'Payment initiation failed', error: error.message });
-  }
-};
-
-
-
-*/
-
-
 exports.initiateCreditCardPayment = async (req, res) => {
   try {
     // Extract and verify token
@@ -215,9 +132,6 @@ exports.initiateCreditCardPayment = async (req, res) => {
     res.status(500).json({ message: 'Payment initiation failed', error: error.message });
   }
 };
-
-
-
 
 
 

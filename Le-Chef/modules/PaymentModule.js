@@ -18,12 +18,12 @@ const paymentSchema = new mongoose.Schema({
     },
     method: {
         type: String,
-        enum: ['credit_card', 'Mobile Wallet'], // Add more payment methods as needed
+        enum: ['credit_card', 'Mobile Wallet','Cash'], // Add more payment methods as needed
         required: true
     },
     contentType: {
         type: String,
-        enum: ['Video', 'Quiz'], // Type of content being paid for
+        enum: ['Video', 'Quiz','Pdf'], // Type of content being paid for
         required: true
     },
     contentId: {

@@ -71,7 +71,7 @@ app.use('/Users', loginroute);
 app.use('/Quiz', quizroute);
 app.use('/UserQuiz', submitquizroute);
 app.use('/Chat', chatroute);
-app.use('/Api',paymentroute);
+app.use('/Pay',paymentroute);
 
 
 

@@ -8,6 +8,7 @@ const User = require('../../../modules/UsersModule');
 const multer = require('multer');
 const path = require('path');
 const upload = multer(); // Set up multer for handling multipart form-data
+
 exports.sendGroupMessage = [
   upload.fields([
     { name: 'images', maxCount: 10 },
@@ -24,7 +25,7 @@ exports.sendGroupMessage = [
 
       const { groupId } = req.params;
       const { content } = req.body;
-      
+
       const sender = await User.findById(senderId);
       if (!sender) return res.status(403).json({ message: 'Unauthorized sender' });
 
