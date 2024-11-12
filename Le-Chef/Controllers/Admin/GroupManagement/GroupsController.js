@@ -14,7 +14,7 @@ exports.createGroup = async (req, res) => {
       if (!token) return res.status(401).json({ message: 'No token provided' });
       
       const decoded = jwt.verify(token, 'your_secret_key');
-      const adminId = decoded.userId;
+      const adminId = decoded._id;
   
       const { title, description } = req.body;
   
@@ -42,7 +42,7 @@ exports.createGroup = async (req, res) => {
       if (!token) return res.status(401).json({ message: 'No token provided' });
       
       const decoded = jwt.verify(token, 'your_secret_key');
-      const adminId = decoded.userId;
+      const adminId = decoded._id;
   
       // Find all groups where the admin is a member
       const groups = await Group.find({ members: adminId });
@@ -62,7 +62,7 @@ exports.createGroup = async (req, res) => {
       if (!token) return res.status(401).json({ message: 'No token provided' });
       
       const decoded = jwt.verify(token, 'your_secret_key');
-      const adminId = decoded.userId;
+      const adminId = decoded._id;
   
       const { groupId } = req.params;
       const { title, description } = req.body;
@@ -101,7 +101,7 @@ exports.createGroup = async (req, res) => {
       if (!token) return res.status(401).json({ message: 'No token provided' });
       
       const decoded = jwt.verify(token, 'your_secret_key');
-      const adminId = decoded.userId;
+      const adminId = decoded._id;
   
       const { groupId } = req.params;
   
@@ -138,7 +138,7 @@ exports.createGroup = async (req, res) => {
   
       // Extract user ID from token
       const decoded = jwt.verify(token, 'your_secret_key');
-      const adminId = decoded.userId;
+      const adminId = decoded._id;
   
       const { groupId } = req.params;
       const { studentId } = req.body;

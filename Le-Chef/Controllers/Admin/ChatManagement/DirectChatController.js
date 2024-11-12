@@ -3,111 +3,115 @@ const cloudinary = require('cloudinary').v2;
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const User = require('../../../modules/UsersModule');
-
-
-
-
+const path = require('path');
 const multer = require('multer');
 const upload = multer(); // This will handle multipart/form-data requests
 
-exports.sendDirectMessage = async (req, res) => {
-  try {
-    // Ensure token exists in headers
-    const token = req.headers.token;
-    if (!token) return res.status(401).json({ message: 'No token provided' });
+exports.sendDirectMessage = [
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'documents', maxCount: 1 },
+    { name: 'audio', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const token = req.headers.token;
+      if (!token) return res.status(401).json({ message: 'No token provided' });
 
-    // Decode the JWT token to get user ID
-    const decoded = jwt.verify(token, 'your_secret_key');
-    const senderId = decoded.userId || decoded._id;
+      const decoded = jwt.verify(token, 'your_secret_key');
+      const senderId = decoded.userId || decoded._id;
 
-    console.log('Decoded token:', decoded);
-    console.log('Sender ID:', senderId);
+      const { receiverId } = req.params;
+      const { content } = req.body;
 
-    // Extract receiverId from params and message content from body
-    const { receiverId } = req.params;
-    const { content } = req.body;
+      const receiver = await User.findById(receiverId);
+      if (!receiver) return res.status(404).json({ message: 'Receiver not found' });
 
-    console.log('Received files:', req.files);  // Log the received files
+      const sender = await User.findById(senderId);
+      if (!sender) return res.status(403).json({ message: 'Unauthorized sender' });
 
-    // Find the receiver and sender from the database
-    const receiver = await User.findById(receiverId);
-    if (!receiver) {
-      return res.status(404).json({ message: 'Receiver not found' });
-    }
+      if (sender.role === 'user' && receiver.role === 'user') {
+        return res.status(403).json({ message: 'Users cannot message each other' });
+      }
 
-    const sender = await User.findById(senderId);
-    if (!sender) {
-      return res.status(403).json({ message: 'Unauthorized sender' });
-    }
+      // Extract files from form-data
+      const imageFile = req.files.image ? req.files.image[0] : null;
+      const documents = req.files.documents || [];
+      const audio = req.files.audio ? req.files.audio[0] : null;
 
-    // Prevent users from messaging each other
-    if (sender.role === 'user' && receiver.role === 'user') {
-      return res.status(403).json({ message: 'Users cannot message each other' });
-    }
-
-    // Handling the files (images, documents, audio)
-    let imageFile = req.files && req.files.image ? req.files.image : null;
-    let documents = req.files && req.files.documents ? req.files.documents : null;
-    let audio = req.files && req.files.audio ? req.files.audio : null;
-
-    console.log('Received files:', req.files);  // This should show the files in the request
-
-    // Function to upload file to Cloudinary
-    const uploadToCloudinary = (file, folder, resourceType = 'image') => {
-      return new Promise((resolve, reject) => {
-        if (!file || !file.data) {
-          return reject(new Error('File data is undefined'));
-        }
-        const stream = cloudinary.uploader.upload_stream(
-          { folder, resource_type: resourceType },
-          (error, result) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result.secure_url);
-            }
+      // Cloudinary upload helper
+      const uploadToCloudinary = (file, folder, resourceType = 'image') => {
+        return new Promise((resolve, reject) => {
+          if (!file || !file.buffer) {
+            return reject(new Error('File data is undefined'));
           }
-        );
-        stream.end(file.data);
+          // Extract the original filename without extension
+          const originalName = path.parse(file.originalname).name;
+
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder,
+              resource_type: resourceType,
+              public_id: originalName, // Use the original filename as the public_id
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result.secure_url);
+            }
+          );
+          stream.end(file.buffer);
+        });
+      };
+
+      const uploadedImages = imageFile
+        ? [await uploadToCloudinary(imageFile, 'LE CHEF/Direct Chat Uploads/Images', 'image')]
+        : [];
+
+      const uploadedDocuments = documents.length > 0
+        ? await Promise.all(
+            documents.map(file => uploadToCloudinary(file, 'LE CHEF/Direct Chat Uploads/Documents', 'raw'))
+          )
+        : [];
+
+      const uploadedAudio = audio
+        ? [await uploadToCloudinary(audio, 'LE CHEF/Direct Chat Uploads/Audios', 'video')]
+        : [];
+
+      // Check for an existing conversation between the sender and receiver
+      let conversation = await DirectChatMessage.findOne({
+        participants: { $all: [senderId, receiverId] },
       });
-    };
 
-    // Uploading image files if present
-    const uploadedImages = imageFile
-      ? [await uploadToCloudinary(imageFile, 'LE CHEF/Direct Chat Uploads/Images', 'image')]
-      : [];
+      const newMessage = {
+        sender: senderId,
+        content,
+        images: uploadedImages,
+        documents: uploadedDocuments,
+        audio: uploadedAudio.length > 0 ? uploadedAudio[0] : null,
+        createdAt: Date.now(),
+      };
 
-    // Uploading documents if present
-    const uploadedDocuments = documents
-      ? await Promise.all([].concat(documents).map(file => uploadToCloudinary(file, 'LE CHEF/Direct Chat Uploads/Documents', 'raw')))
-      : [];
+      if (conversation) {
+        // Append the new message to the existing conversation's messages array
+        conversation.messages.push(newMessage);
+      } else {
+        // Create a new conversation document if one doesn't exist
+        conversation = new DirectChatMessage({
+          participants: [senderId, receiverId],
+          messages: [newMessage],
+        });
+      }
 
-    // Uploading audio files if present
-    const uploadedAudio = audio
-      ? [await uploadToCloudinary(audio, 'LE CHEF/Direct Chat Uploads/Audios', 'video')]
-      : [];
+      // Save the conversation
+      await conversation.save();
 
-    // Create a new message
-    const newMessage = new DirectChatMessage({
-      participants: [senderId, receiverId],
-      sender: senderId,
-      content,
-      images: uploadedImages,
-      documents: uploadedDocuments,
-      audio: uploadedAudio,
-    });
+      const { io } = require('../../../server');
+      io.to([senderId, receiverId]).emit('direct message', conversation);
 
-    // Save the message to the database
-    await newMessage.save();
-
-    // Emit the new message to the sender and receiver via WebSocket (assuming socket.io is used)
-    const { io } = require('../../../server');  // Adjust path as necessary
-    io.to([senderId, receiverId]).emit('direct message', newMessage);
-
-    // Respond with a success message
-    res.status(201).json({ message: 'Message sent successfully', newMessage: newMessage.toObject() });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      res.status(201).json({ message: 'Message sent successfully', conversation: conversation.toObject() });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
-};
+];

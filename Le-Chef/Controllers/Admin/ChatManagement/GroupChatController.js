@@ -6,88 +6,109 @@ const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const User = require('../../../modules/UsersModule');
 const multer = require('multer');
+const path = require('path');
+const upload = multer(); // Set up multer for handling multipart form-data
+exports.sendGroupMessage = [
+  upload.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'documents', maxCount: 10 },
+    { name: 'audio', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const token = req.headers.token;
+      if (!token) return res.status(401).json({ message: 'No token provided' });
 
-// SEND GROUP MESSAGES
-exports.sendGroupMessage = async (req, res) => {
-  try {
-    const token = req.headers.token;
-    if (!token) return res.status(401).json({ message: 'No token provided' });
+      const decoded = jwt.verify(token, 'your_secret_key');
+      const senderId = decoded.userId || decoded._id;
 
-    const decoded = jwt.verify(token, 'your_secret_key');
-    const senderId = decoded._id;
-    const { groupId } = req.params;
-    const { content } = req.body;
+      const { groupId } = req.params;
+      const { content } = req.body;
+      
+      const sender = await User.findById(senderId);
+      if (!sender) return res.status(403).json({ message: 'Unauthorized sender' });
 
-    let images = req.files && req.files.images ? req.files.images : null;
-    let documents = req.files && req.files.documents ? req.files.documents : null;
-    let audio = req.files && req.files.audio ? req.files.audio : null;
+      if (!content) {
+        return res.status(400).json({ message: 'Content is required' });
+      }
 
-    // Ensure audio is an array if multiple files are sent
-    if (Array.isArray(audio)) {
-      audio = audio[0]; // Access the first file if it's an array
-    }
+      const group = await Group.findById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: 'Group not found' });
+      }
 
-    const group = await Group.findById(groupId);
-    if (!group) {
-      return res.status(404).json({ message: 'Group not found' });
-    }
+      if (!group.members.includes(senderId)) {
+        return res.status(403).json({ message: 'You are not a member of this group' });
+      }
 
-    if (!group.members.includes(senderId)) {
-      return res.status(403).json({ message: 'You are not a member of this group' });
-    }
+      const images = req.files.images || [];
+      const documents = req.files.documents || [];
+      const audio = req.files.audio ? req.files.audio[0] : null;
 
-    const uploadToCloudinary = (file, folder, resourceType = 'image') => {
-      return new Promise((resolve, reject) => {
-        if (!file || !file.data) {
-          return reject(new Error('File data is undefined'));
-        }
-        const stream = cloudinary.uploader.upload_stream(
-          { folder, resource_type: resourceType },
-          (error, result) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result.secure_url);
-            }
+      const uploadToCloudinary = (file, folder, resourceType = 'image') => {
+        return new Promise((resolve, reject) => {
+          if (!file || !file.buffer) {
+            return reject(new Error('File data is undefined'));
           }
-        );
-        stream.end(file.data);
-      });
-    };
+          const originalName = file.originalname.split('.')[0];
+          const stream = cloudinary.uploader.upload_stream(
+            { folder, public_id: originalName, resource_type: resourceType },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result.secure_url);
+            }
+          );
+          stream.end(file.buffer);
+        });
+      };
 
-    const uploadedImages = images
-      ? await Promise.all([].concat(images).map(file => uploadToCloudinary(file, 'LE CHEF/Chat Uploads/Images', 'image')))
-      : [];
+      const uploadedImages = await Promise.all(images.map(file =>
+        uploadToCloudinary(file, 'LE CHEF/Chat Uploads/Images', 'image')
+      ));
 
-    const uploadedDocuments = documents
-      ? await Promise.all([].concat(documents).map(file => uploadToCloudinary(file, 'LE CHEF/Chat Uploads/Documents', 'raw')))
-      : [];
+      const uploadedDocuments = await Promise.all(documents.map(file =>
+        uploadToCloudinary(file, 'LE CHEF/Chat Uploads/Documents', 'raw')
+      ));
 
-    const uploadedAudio = audio 
-      ? [await uploadToCloudinary(audio, 'LE CHEF/Chat Uploads/Audios', 'video')] 
-      : [];
+      const uploadedAudio = audio ? await uploadToCloudinary(audio, 'LE CHEF/Chat Uploads/Audios', 'video') : null;
 
-    const newMessage = new GroupChatMessage({
-      group: groupId,
-      sender: senderId,
-      content,
-      images: uploadedImages,
-      documents: uploadedDocuments,
-      audio: uploadedAudio,
-    });
+      let conversation = await GroupChatMessage.findOne({ group: groupId });
+      const newMessage = {
+        sender: senderId,
+        content,
+        images: uploadedImages,
+        documents: uploadedDocuments,
+        audio: uploadedAudio ? [uploadedAudio] : [],
+        createdAt: Date.now(),
+      };
+
+      if (conversation) {
+        conversation.messages.push(newMessage);
+      } else {
+        conversation = new GroupChatMessage({
+          group: groupId,
+          messages: [newMessage],
+        });
+      }
 
 
-    await newMessage.save();
+      await conversation.save();
 
-    const { io } = require('../../../server');
-    io.to(`group_${groupId}`).emit('group message', newMessage);
+      console.log('Content:', content);
+      console.log('Sender:', senderId);
 
-    res.status(201).json({ message: 'Message sent successfully', newMessage: newMessage.toObject() });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+
+      const { io } = require('../../../server');
+      io.to(`group_${groupId}`).emit('group message', conversation);
+
+      res.status(201).json({ message: 'Message sent successfully', conversation: conversation.toObject() });
+    } catch (error) {
+      console.error('Error in sendGroupMessage:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
-};
+  
+];
 
 
 /*

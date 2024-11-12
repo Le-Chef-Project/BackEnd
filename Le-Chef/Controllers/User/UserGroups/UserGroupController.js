@@ -13,7 +13,7 @@ exports.getStudentGroups = async (req, res) => {
       if (!token) return res.status(401).json({ message: 'No token provided' });
       
       const decoded = jwt.verify(token, 'your_secret_key');
-      const studentId = decoded.userId;
+      const studentId = decoded._id;
   
       // Find all groups where the student is a member
       const groups = await Group.find({ members: studentId });
