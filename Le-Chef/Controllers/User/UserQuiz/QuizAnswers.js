@@ -60,26 +60,38 @@ exports.submitQuiz = async (req, res) => {
         let wrongAnswers = 0;
         let unansweredQuestions = totalQuestions;
 
+        // Array to store the status of each question
+        const questionStatuses = [];
+
         // Convert answers array to a map for easier lookup
         const answerMap = new Map(answers.map(a => [a.questionId.toString(), a.selectedOption]));
 
         quiz.questions.forEach(question => {
             const selectedOptionIndex = answerMap.get(question._id.toString());  // Get the index of the selected option
+            const correctAnswerIndex = question.options.indexOf(question.answer);
+
+            let status = 'unanswered';  // Default status is 'unanswered'
 
             if (selectedOptionIndex === undefined) {
                 // Unanswered question
                 unansweredQuestions -= 1;
             } else {
-                // Check if the selected option matches the correct answer
-                const correctAnswerIndex = question.options.indexOf(question.answer);
                 if (selectedOptionIndex === correctAnswerIndex) {
                     // Correct answer
                     correctAnswers += 1;
+                    status = 'correct';
                 } else {
                     // Wrong answer
                     wrongAnswers += 1;
+                    status = 'wrong';
                 }
             }
+
+            // Push the status and question id to the array
+            questionStatuses.push({
+                questionId: question._id.toString(),
+                status,
+            });
         });
 
         // Calculate unansweredQuestions based on totalQuestions and counts
@@ -92,11 +104,12 @@ exports.submitQuiz = async (req, res) => {
         studentQuizResult.totalQuestions = totalQuestions;
         studentQuizResult.unansweredQuestions = unansweredQuestions;
         studentQuizResult.score = correctAnswers;  // Number of correct answers
-         // Store the completion time
+        // Store the completion time
 
         // Save the quiz result
         await studentQuizResult.save();
 
+        // Return the response with question statuses
         res.status(201).json({
             message: 'Quiz submitted successfully',
             score: `${correctAnswers}/${totalQuestions}`,  // Format for response
@@ -104,6 +117,7 @@ exports.submitQuiz = async (req, res) => {
             wrongAnswers,
             totalQuestions,
             unansweredQuestions,
+            questionStatuses,  // Include the statuses for each question
         });
     } catch (error) {
         res.status(400).json({ error: error.message });
