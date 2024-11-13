@@ -6,14 +6,13 @@ const jwt = require('jsonwebtoken');
 const User = require('../../../modules/UsersModule');
 const cloudinary = require('cloudinary').v2;
 const PDF = require('../../../modules/PdfModule');
+const path = require('path');
 
 exports.initiateEWalletPayment = async (req, res) => {
   try {
     // Validate input
     const { contentId } = req.params;  // contentId is the ID of the content (video/quiz/pdf)
     const paymentImage = req.file; // Get the uploaded file
-    console.log('content id:',contentId,paymentImage)
-    console.log('Request body:', req.body);
 
     // Check if a file is uploaded
     if (!paymentImage) {
@@ -82,7 +81,7 @@ exports.initiateEWalletPayment = async (req, res) => {
       status: 'pending',
       method: 'Mobile Wallet',  // Assuming it's an e-wallet payment
       contentType,
-      contentId,contentId,
+      contentId,
       paymentImageUrl: uploadResult.secure_url, // Save the image URL from Cloudinary
     });
 
