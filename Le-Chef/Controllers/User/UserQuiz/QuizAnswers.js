@@ -64,17 +64,21 @@ exports.submitQuiz = async (req, res) => {
         const answerMap = new Map(answers.map(a => [a.questionId.toString(), a.selectedOption]));
 
         quiz.questions.forEach(question => {
-            const selectedOption = answerMap.get(question._id.toString());
+            const selectedOptionIndex = answerMap.get(question._id.toString());  // Get the index of the selected option
 
-            if (selectedOption === undefined) {
+            if (selectedOptionIndex === undefined) {
                 // Unanswered question
                 unansweredQuestions -= 1;
-            } else if (question.answer === selectedOption) {
-                // Correct answer
-                correctAnswers += 1;
             } else {
-                // Wrong answer
-                wrongAnswers += 1;
+                // Check if the selected option matches the correct answer
+                const correctAnswerIndex = question.options.indexOf(question.answer);
+                if (selectedOptionIndex === correctAnswerIndex) {
+                    // Correct answer
+                    correctAnswers += 1;
+                } else {
+                    // Wrong answer
+                    wrongAnswers += 1;
+                }
             }
         });
 
