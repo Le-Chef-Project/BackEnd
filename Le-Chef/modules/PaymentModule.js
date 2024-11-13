@@ -18,12 +18,12 @@ const paymentSchema = new mongoose.Schema({
     },
     method: {
         type: String,
-        enum: ['credit_card', 'Mobile Wallet','Cash'], // Add more payment methods as needed
+        enum: ['credit_card', 'Mobile Wallet', 'Cash'], // Add more payment methods as needed
         required: true
     },
     contentType: {
         type: String,
-        enum: ['Video', 'Quiz','Pdf'], // Type of content being paid for
+        enum: ['Video', 'Quiz', 'Pdf'], // Type of content being paid for
         required: true
     },
     contentId: {
@@ -43,16 +43,17 @@ const paymentSchema = new mongoose.Schema({
     paymobResponse: { // Store the full response from Paymob
         type: mongoose.Schema.Types.Mixed,
     },
+    paymentImageUrl: { // Add this field to store the Cloudinary URL
+        type: String,
+    },
     created_at: {
         type: Date,
         default: Date.now
     },
-    // New fields to store the payment status
     success: {
         type: Boolean,
         default: false,
     },
-    
 }, {
     timestamps: true // This will automatically add createdAt and updatedAt fields
 });
