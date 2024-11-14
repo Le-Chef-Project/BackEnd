@@ -112,101 +112,50 @@ exports.sendGroupMessage = [
 ];
 
 
-/*
-exports.sendDirectMessage = async (req, res) => {
+
+
+exports.getGroupMessages = asyncHandler(async (req, res) => {
   try {
-    // Extract and verify token
     const token = req.headers.token;
     if (!token) return res.status(401).json({ message: 'No token provided' });
-    
+
     const decoded = jwt.verify(token, 'your_secret_key');
-    const senderId = decoded.userId;
+    const userId = decoded.userId || decoded._id;
+    const { groupId } = req.params;
 
-    const { receiverId, content, images, documents, audio } = req.body;
-
-    // Ensure that either sender or receiver is admin
-    const sender = await User.findById(senderId);
-    const receiver = await User.findById(receiverId);
-    if (!sender || !receiver) {
-      return res.status(404).json({ message: 'Sender or Receiver not found' });
+    // Check if the user is a member of the group
+    const user = await User.findById(userId);
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found' });
+    if (!group.members.includes(userId)) {
+      return res.status(403).json({ message: 'You are not a member of this group' });
     }
 
-    if (sender.role !== 'admin' && receiver.role !== 'admin') {
-      return res.status(403).json({ message: 'Direct messages only allowed between admin and students' });
-    }
+    // Retrieve group chat messages, populate sender information, and filter out empty fields
+    const conversation = await GroupChatMessage.findOne({ group: groupId })
+      .populate('messages.sender', 'username firstName lastName')
+      .select('messages')
+      .lean();
 
-    // Participants array should have admin and student
-    const participants = [senderId, receiverId].sort(); // Sorting to maintain consistency
+    if (!conversation) return res.status(404).json({ message: 'No messages found for this group' });
 
-    // Create new direct message
-    const newDirectMessage = new DirectChatMessage({
-      participants,
-      sender: senderId,
-      content,
-      images,
-      documents,
-      audio,
+    // Filter messages to include only non-empty fields and sort by newest to oldest
+    const messages = conversation.messages
+      .map((msg) =>
+        Object.fromEntries(
+          Object.entries(msg).filter(
+            ([, value]) => value && (!(Array.isArray(value) || typeof value === 'object') || Object.keys(value).length > 0)
+          )
+        )
+      )
+      .reverse(); // Reverse to get newest to oldest
+
+    res.status(200).json({
+      message: 'Messages retrieved successfully',
+      messages,
     });
-
-    await newDirectMessage.save();
-
-    // Emit the message via Socket.IO
-    const { io } = require('../server'); // Adjust the path as necessary
-    const roomName = `direct_${participants.join('_')}`; // Unique room for the two participants
-    io.to(roomName).emit('direct message', newDirectMessage);
-
-    res.status(201).json({ message: 'Direct message sent successfully', newDirectMessage });
   } catch (error) {
-    console.error(error);
+    console.error('Error in getGroupMessagesByGroupId:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
-};
-*/
-
-
-
-
-
-
-/*
-  exports.getDirectMessages = async (req, res) => {
-    try {
-      const token = req.headers.token;
-      if (!token) return res.status(401).json({ message: 'No token provided' });
-      
-      const decoded = jwt.verify(token, 'your_secret_key');
-      const userId = decoded.userId;
-  
-      const { receiverId } = req.params;
-  
-      // Ensure that one of the participants is admin
-      const receiver = await User.findById(receiverId);
-      const sender = await User.findById(userId);
-      if (!receiver || !sender) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      if (sender.role !== 'admin' && receiver.role !== 'admin') {
-        return res.status(403).json({ message: 'Direct messages only allowed between admin and students' });
-      }
-  
-      const participants = [userId, receiverId].sort();
-  
-      const messages = await DirectChatMessage.find({
-        participants: participants,
-      }).sort({ createdAt: 1 });
-  
-      res.status(200).json({ messages });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Internal Server Error' });
-    }
-  };*/
-
-
-//routes
-/*
-  router.post('/send', authenticate, directMessageController.sendDirectMessage);
-router.get('/messages/:receiverId', authenticate, directMessageController.getDirectMessages);*/
-
-//MISSSSEDDDDD::::getallmessages in the group
+});

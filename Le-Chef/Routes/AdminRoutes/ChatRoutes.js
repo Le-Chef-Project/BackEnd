@@ -15,7 +15,7 @@ const { getGroupMembers } = require('../../Controllers/Admin/GroupManagement/Gro
 const { sendGroupMessage } = require('../../Controllers/Admin/ChatManagement/GroupChatController');
 const { sendDirectMessage } = require('../../Controllers/Admin/ChatManagement/DirectChatController');
 const { getDirectMessages } = require('../../Controllers/Admin/ChatManagement/DirectChatController');
-
+const { getGroupMessages } = require('../../Controllers/Admin/ChatManagement/GroupChatController');
 
 
 
@@ -31,6 +31,5 @@ router.route('/GetGroupMembers/:groupId').get(getGroupMembers);
 router.route('/SendGroupMessage/:groupId').post(sendGroupMessage);
 router.route('/SendDirectMessage/:receiverId').post(sendDirectMessage);
 router.route('/getDirectMessages/:chatRoomId').get(getDirectMessages);
-
-
+router.route('/getGroupMessages/:groupId').get(getGroupMessages);
 module.exports=router;
