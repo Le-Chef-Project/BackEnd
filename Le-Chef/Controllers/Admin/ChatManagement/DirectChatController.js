@@ -115,3 +115,50 @@ exports.sendDirectMessage = [
     }
   }
 ];
+
+exports.getDirectMessages= asyncHandler(async (req, res) => {
+  try {
+    const token = req.headers.token;
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    const decoded = jwt.verify(token, 'your_secret_key');
+    const userId = decoded.userId || decoded._id;
+
+    const { chatRoomId } = req.params;
+
+    // Verify that the user is a participant in the specified chat room
+    const conversation = await DirectChatMessage.findOne({
+      _id: chatRoomId,
+      participants: userId,
+    })
+      .populate('messages.sender', 'username firstName lastName')
+      .select('messages')
+      .lean();
+
+    if (!conversation) {
+      return res.status(404).json({ message: 'Chat room not found or access denied' });
+    }
+
+    // Filter messages to include only non-empty fields and sort by newest to oldest
+    const messages = conversation.messages
+      .map((msg) => {
+        // Filter out empty fields in each message
+        return Object.fromEntries(
+          Object.entries(msg).filter(
+            ([, value]) => value && (!(Array.isArray(value) || typeof value === 'object') || Object.keys(value).length > 0)
+          )
+        );
+      })
+      
+      // Sort by newest to oldest
+    messages.reverse(); 
+
+    res.status(200).json({
+      message: 'Conversation retrieved successfully',
+      messages,
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});

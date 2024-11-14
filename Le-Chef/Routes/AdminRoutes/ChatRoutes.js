@@ -14,7 +14,7 @@ const { getStudentGroups  } = require('../../Controllers/User/UserGroups/UserGro
 const { getGroupMembers } = require('../../Controllers/Admin/GroupManagement/GroupsController');
 const { sendGroupMessage } = require('../../Controllers/Admin/ChatManagement/GroupChatController');
 const { sendDirectMessage } = require('../../Controllers/Admin/ChatManagement/DirectChatController');
-
+const { getDirectMessages } = require('../../Controllers/Admin/ChatManagement/DirectChatController');
 
 
 
@@ -30,7 +30,7 @@ router.route('/GetStudentGroups').get(userMiddleware,getStudentGroups);
 router.route('/GetGroupMembers/:groupId').get(getGroupMembers);
 router.route('/SendGroupMessage/:groupId').post(sendGroupMessage);
 router.route('/SendDirectMessage/:receiverId').post(sendDirectMessage);
-
+router.route('/getDirectMessages/:chatRoomId').get(getDirectMessages);
 
 
 module.exports=router;
