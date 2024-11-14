@@ -17,7 +17,6 @@ const directChatMessageSchema = new mongoose.Schema({
       },
       content: {
         type: String,
-        required: true,
       },
       images: [String],
       documents: [String],
