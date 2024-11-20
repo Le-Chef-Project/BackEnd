@@ -9,7 +9,7 @@ const { getAdminGroups } = require('../../Controllers/Admin/GroupManagement/Grou
 const { updateGroup } = require('../../Controllers/Admin/GroupManagement/GroupsController');
 const { deleteGroup } = require('../../Controllers/Admin/GroupManagement/GroupsController');
 const { addStudentToGroup } = require('../../Controllers/Admin/GroupManagement/GroupsController');
-const { removeStudentFromGroup } = require('../../Controllers/Admin/GroupManagement/GroupsController');
+const { removeStudentsFromGroup } = require('../../Controllers/Admin/GroupManagement/GroupsController');
 const { getStudentGroups  } = require('../../Controllers/User/UserGroups/UserGroupController');
 const { getGroupMembers } = require('../../Controllers/Admin/GroupManagement/GroupsController');
 const { sendGroupMessage } = require('../../Controllers/Admin/ChatManagement/GroupChatController');
@@ -25,7 +25,7 @@ router.route('/GetAdminGroups').get(adminMiddleware,getAdminGroups);
 router.route('/UpdateGroup/:groupId').put(adminMiddleware,updateGroup);
 router.route('/DeleteGroup/:groupId').delete(adminMiddleware,deleteGroup);
 router.route('/AddStudentToGroup/:groupId').post(adminMiddleware,addStudentToGroup);
-router.route('/RemoveStudent/:groupId').delete(adminMiddleware,removeStudentFromGroup);
+router.route('/RemoveStudent/:groupId').delete(adminMiddleware,removeStudentsFromGroup);
 router.route('/GetStudentGroups').get(userMiddleware,getStudentGroups);
 router.route('/GetGroupMembers/:groupId').get(getGroupMembers);
 router.route('/SendGroupMessage/:groupId').post(sendGroupMessage);

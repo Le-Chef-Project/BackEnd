@@ -127,9 +127,7 @@ exports.createGroup = async (req, res) => {
     }
   };
   
-  
-  //ADD STUDENTS TO GROUPS
-  
+  //ADD STUDENTS TO GROUP
   exports.addStudentToGroup = async (req, res) => {
     try {
       // Extract and verify token
@@ -141,45 +139,71 @@ exports.createGroup = async (req, res) => {
       const adminId = decoded._id;
   
       const { groupId } = req.params;
-      const { studentId } = req.body;
+      const { studentIds } = req.body; // Expect an array of student IDs
   
-      // Find the group to add the student to
+      if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ message: 'Provide one or more student IDs' });
+      }
+  
+      // Find the group to add the students to
       const group = await Group.findById(groupId);
       if (!group) {
         return res.status(404).json({ message: 'Group not found' });
       }
   
-      // Check if the student is already a member of another group
-      const existingGroup = await Group.findOne({ members: studentId });
-      if (existingGroup) {
-        return res.status(400).json({ message: 'Student is already a member of another group' });
+      const successfullyAdded = [];
+      const failedToAdd = [];
+  
+      for (const studentId of studentIds) {
+        try {
+          // Check if the student is already a member of another group
+          const existingGroup = await Group.findOne({ members: studentId });
+          if (existingGroup) {
+            failedToAdd.push({ studentId, reason: 'Already a member of another group' });
+            continue;
+          }
+  
+          // Check if the user is already a member of this group
+          if (group.members.includes(studentId)) {
+            failedToAdd.push({ studentId, reason: 'Already a member of this group' });
+            continue;
+          }
+  
+          // Add student to the group
+          group.members.push(studentId);
+          successfullyAdded.push(studentId);
+        } catch (innerError) {
+          failedToAdd.push({ studentId, reason: 'Error processing student' });
+        }
       }
   
-      // Check if the user is already a member of this group
-      if (group.members.includes(studentId)) {
-        return res.status(400).json({ message: 'User already a member of this group' });
-      }
-  
-      // Add student to the group
-      group.members.push(studentId);
       await group.save();
   
-      res.status(200).json({ message: 'Student added to group successfully', group });
+      res.status(200).json({
+        message: 'Students processed successfully',
+        successfullyAdded,
+        failedToAdd,
+        group,
+      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   };
-    
-  //REMOVE STUDENTS FROM GROUPS
-  exports.removeStudentFromGroup = async (req, res) => {
+  
+  //REMOVE STUDENTS FROM GROUP
+  exports.removeStudentsFromGroup = async (req, res) => {
     try {
       // Extract and verify token
       const token = req.headers.token;
       if (!token) return res.status(401).json({ message: 'No token provided' });
   
       const { groupId } = req.params;
-      const { studentId } = req.body;
+      const { studentIds } = req.body; // Expect an array of student IDs
+  
+      if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ message: 'Provide one or more student IDs' });
+      }
   
       // Find the group
       const group = await Group.findById(groupId);
@@ -187,17 +211,29 @@ exports.createGroup = async (req, res) => {
         return res.status(404).json({ message: 'Group not found' });
       }
   
-      // Check if the user is a member of the group
-      if (!group.members.includes(studentId)) {
-        return res.status(400).json({ message: 'User is not a member of the group' });
-      }
+      const successfullyRemoved = [];
+      const failedToRemove = [];
   
-      // Remove student from the group
-      group.members = group.members.filter(member => member.toString() !== studentId);
+      for (const studentId of studentIds) {
+        // Check if the student is a member of the group
+        if (!group.members.includes(studentId)) {
+          failedToRemove.push({ studentId, reason: 'Not a member of the group' });
+          continue;
+        }
+  
+        // Remove the student from the group
+        group.members = group.members.filter(member => member.toString() !== studentId);
+        successfullyRemoved.push(studentId);
+      }
   
       await group.save();
   
-      res.status(200).json({ message: 'Student removed from group successfully', group });
+      res.status(200).json({
+        message: 'Students processed successfully',
+        successfullyRemoved,
+        failedToRemove,
+        group,
+      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Internal Server Error' });
