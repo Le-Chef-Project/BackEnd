@@ -162,3 +162,25 @@ exports.getDirectMessages= asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+
+exports.getAdminDirectChats = async (req, res) => {
+  try {
+    // Extract and verify token
+    const token = req.headers.token;
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    const decoded = jwt.verify(token, 'your_secret_key');
+    const adminId = decoded._id;
+
+    // Find all direct chat rooms where the admin is a participant
+    const directChats = await DirectChatMessage.find({
+      participants: adminId,
+    }).populate('participants', 'username email'); // Populate participant details if needed
+
+    res.status(200).json({ message: 'Direct chats retrieved successfully', directChats });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
