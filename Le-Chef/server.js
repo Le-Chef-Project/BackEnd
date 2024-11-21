@@ -26,6 +26,8 @@ const quizroute = require('./Routes/AdminRoutes/QuizzesRoutes');
 const submitquizroute = require('./Routes/UserRoutes/AnswerQuizRoute');
 const chatroute = require('./Routes/AdminRoutes/ChatRoutes');
 const paymentroute= require('./Routes/AdminRoutes/PaymentRoute');
+const Sessionsroute = require('./Routes/AdminRoutes/SessionsRoutes');
+
 
 
 
@@ -72,7 +74,7 @@ app.use('/Quiz', quizroute);
 app.use('/UserQuiz', submitquizroute);
 app.use('/Chat', chatroute);
 app.use('/Pay',paymentroute);
-
+app.use('/Agora', Sessionsroute);
 
 
 // Socket.IO Connection Handling
