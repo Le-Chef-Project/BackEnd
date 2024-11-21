@@ -32,10 +32,7 @@ router.route('/SendGroupMessage/:groupId').post(sendGroupMessage);
 router.route('/SendDirectMessage/:receiverId').post(sendDirectMessage);
 router.route('/getDirectMessages/:chatRoomId').get(getDirectMessages);
 router.route('/getGroupMessages/:groupId').get(getGroupMessages);
-<<<<<<< Updated upstream
 router.route('/getAdminChats').get(getAdminDirectChats);
-=======
 
->>>>>>> Stashed changes
 
 module.exports=router;
