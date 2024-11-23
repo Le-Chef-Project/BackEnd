@@ -92,13 +92,25 @@ exports.sendGroupMessage = [
         });
       }
 
-
       await conversation.save();
 
-      console.log('Content:', content);
-      console.log('Sender:', senderId);
+      // Update the lastMessage field in the Group model
+      const lastMessage = {
+        sender: senderId,
+        content,
+        images: uploadedImages,
+        documents: uploadedDocuments,
+        audio: uploadedAudio ? [uploadedAudio] : [],
+        createdAt: Date.now(),
+      };
 
+      await Group.findByIdAndUpdate(
+        groupId,
+        { lastMessage },
+        { new: true }
+      );
 
+      // Emit the message to the group room via Socket.IO
       const { io } = require('../../../server');
       io.to(`group_${groupId}`).emit('group message', conversation);
 
@@ -107,9 +119,9 @@ exports.sendGroupMessage = [
       console.error('Error in sendGroupMessage:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
-  }
-  
+  },
 ];
+
 
 
 

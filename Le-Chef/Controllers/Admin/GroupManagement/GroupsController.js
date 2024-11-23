@@ -43,9 +43,9 @@ exports.createGroup = async (req, res) => {
       
       const decoded = jwt.verify(token, 'your_secret_key');
       const adminId = decoded._id;
-  
-      // Find all groups where the admin is a member
-      const groups = await Group.find({ members: adminId });
+
+    // Find all groups where the admin is a member
+    const groups = await Group.find({ members: adminId });
   
       res.status(200).json({ message: 'Groups retrieved successfully', groups });
     } catch (error) {
