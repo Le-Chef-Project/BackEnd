@@ -26,6 +26,7 @@ exports.getPendingPayments = async (req, res) => {
         contentType: payment.contentType,
         contentId: payment.contentId,
         paymentImageUrl: payment.method === 'Mobile Wallet' ? payment.paymentImageUrl : null, // Include image only for Mobile Wallet
+        createdAt: payment.createdAt, // Add the createdAt f
       }));
   
       res.json({ message: 'Pending payment requests retrieved successfully', payments: formattedPayments });
