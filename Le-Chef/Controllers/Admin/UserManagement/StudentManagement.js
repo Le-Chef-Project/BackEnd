@@ -1,6 +1,7 @@
 const User = require('../../../modules/UsersModule'); // Adjust the path as necessary
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('../../../Util/Cloudinary');
 
 
 // Function to add a new user (student)
@@ -97,59 +98,76 @@ exports.deleteStudent = async (req, res) => {
     }
 };
 
+
+
+
 exports.editProfile = async (req, res) => {
     try {
-      const { userId } = req.params; // ID of the user to update
-      const { token } = req.headers; // Extract token from headers
-  
-      if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
-      }
-  
-      // Verify the token
-      const decodedToken = jwt.verify(token, 'your_secret_key');
-      const adminId = decodedToken._id;
-  
-      // Check if the logged-in user is an admin
-      const adminUser = await User.findById(adminId);
-      if (!adminUser || adminUser.role !== 'admin') {
-        return res.status(403).json({ message: 'Access denied. Admins only' });
-      }
-  
-      // Fetch the user to update
-      console.log('userId:', userId);
+        const { userId } = req.params; // ID of the user to update
+        const { token } = req.headers; // Extract token from headers
 
-      const userToUpdate = await User.findById(userId);
-      if (!userToUpdate) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Extract the fields to update from the request body
-      const {
-        username,
-        email,
-        firstName,
-        lastName,
-        phone,
-        address,
-        educationLevel,
-      } = req.body;
-  
-      // Update allowed fields
-      if (username) userToUpdate.username = username;
-      if (email) userToUpdate.email = email;
-      if (firstName) userToUpdate.firstName = firstName;
-      if (lastName) userToUpdate.lastName = lastName;
-      if (phone) userToUpdate.phone = phone;
-      if (address) userToUpdate.address = { ...userToUpdate.address, ...address };
-      if (educationLevel) userToUpdate.educationLevel = educationLevel;
-  
-      // Save the updated user
-      const updatedUser = await userToUpdate.save();
-  
-      res.json({ message: 'User profile updated successfully', user: updatedUser });
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        // Verify the token
+        const decodedToken = jwt.verify(token, 'your_secret_key');
+        const adminId = decodedToken._id;
+
+
+
+        // Fetch the user to update
+        const userToUpdate = await User.findById(userId);
+        if (!userToUpdate) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Extract the fields to update from the request body
+        const {
+            username,
+            email,
+            firstName,
+            lastName,
+            phone,
+            address,
+            educationLevel,
+        } = req.body;
+
+        // Handle profile image upload
+        if (req.file) { // Assuming the image is sent as a file upload
+            // Remove existing image from Cloudinary if it exists
+            if (userToUpdate.image && userToUpdate.image.public_id) {
+                await cloudinary.uploader.destroy(userToUpdate.image.public_id);
+            }
+
+            // Upload the new image
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'User Photos',
+                resource_type: 'image',
+            });
+
+            // Update image details
+            userToUpdate.image = {
+                public_id: result.public_id,
+                url: result.secure_url,
+            };
+        }
+
+        // Update allowed fields
+        if (username) userToUpdate.username = username;
+        if (email) userToUpdate.email = email;
+        if (firstName) userToUpdate.firstName = firstName;
+        if (lastName) userToUpdate.lastName = lastName;
+        if (phone) userToUpdate.phone = phone;
+        if (address) userToUpdate.address = { ...userToUpdate.address, ...address };
+        if (educationLevel) userToUpdate.educationLevel = educationLevel;
+
+        // Save the updated user
+        const updatedUser = await userToUpdate.save();
+
+        res.json({ message: 'User profile updated successfully', user: updatedUser });
     } catch (error) {
-      console.error('Error updating profile:', error);
-      res.status(500).json({ message: 'Error updating profile', error: error.message });
+        console.error('Error updating profile:', error);
+        res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
-  };
+};
