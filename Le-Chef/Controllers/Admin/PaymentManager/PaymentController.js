@@ -11,30 +11,45 @@ const path = require('path');
 
 // Function to get all pending requests
 exports.getPendingPayments = async (req, res) => {
-    try {
+  try {
       // Fetch only pending payments with method 'Cash' or 'Mobile Wallet'
       const payments = await Payment.find({
-        status: 'pending',
-        method: { $in: ['Cash', 'Mobile Wallet'] }, // Filter for Cash and E-Wallet
-      }).populate('user', 'username email');
-  
+          status: 'pending',
+          method: { $in: ['Cash', 'Mobile Wallet'] }, // Filter for Cash and E-Wallet
+      })
+      .populate('user', 'username email') // Populate user information
+      .populate({
+          path: 'contentId', // Assuming `contentId` references the `Content` model
+          select: 'title description', // Include only title and description
+      });
+
+      // Format the payments to include necessary fields
       const formattedPayments = payments.map((payment) => ({
-        paymentId: payment._id,
-        user: payment.user,
-        amount: payment.amount,
-        method: payment.method,
-        contentType: payment.contentType,
-        contentId: payment.contentId,
-        paymentImageUrl: payment.method === 'Mobile Wallet' ? payment.paymentImageUrl : null, // Include image only for Mobile Wallet
-        createdAt: payment.createdAt, // Add the createdAt f
+          paymentId: payment._id,
+          user: payment.user,
+          amount: payment.amount,
+          method: payment.method,
+          contentType: payment.contentType,
+          contentId: payment.contentId ? payment.contentId._id : null, // Include contentId if populated
+          title: payment.contentId ? payment.contentId.title : null, // Include title if available
+          description: payment.contentId ? payment.contentId.description : null, // Include description if available
+          paymentImageUrl: payment.method === 'Mobile Wallet' ? payment.paymentImageUrl : null, // Include image only for Mobile Wallet
+          createdAt: payment.createdAt, // Add the createdAt field
       }));
-  
-      res.json({ message: 'Pending payment requests retrieved successfully', payments: formattedPayments });
-    } catch (error) {
+
+      res.json({ 
+          message: 'Pending payment requests retrieved successfully', 
+          payments: formattedPayments 
+      });
+  } catch (error) {
       console.error('Failed to fetch pending payments:', error);
-      res.status(500).json({ message: 'Failed to fetch pending payments', error: error.message });
-    }
-  };
+      res.status(500).json({ 
+          message: 'Failed to fetch pending payments', 
+          error: error.message 
+      });
+  }
+};
+
   
 
 
