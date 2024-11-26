@@ -29,34 +29,49 @@ exports.generateRtcToken = (req, res) => {
 };
 
 exports.createSession = async (req, res) => {
-    const { title, description, date, startTime, endTime } = req.body; // No participants in body
-    const token = req.headers.token;
-    
-    try {
-        const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
-        const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
-  
-        // Convert startTime and endTime to valid Date objects
-        const startDate = new Date(`${date}T${startTime}:00`);
-        const endDate = new Date(`${date}T${endTime}:00`);
-  
-        // Create the session with the teacher as the first member in the participants array
-        const session = await Session.create({
-            title,
-            description,
-            date,
-            startTime: startDate, // Pass the Date object
-            endTime: endDate,     // Pass the Date object
-            hostUrl: `${req.protocol}://${req.get('host')}/session/${title}`,
-            teacher: teacherId,   // Pass teacher ID as ObjectId in the teacher field
-            participants: [teacherId],    // Add teacher as the first participant
-        });
-  
-        res.status(201).json(session);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+  const { title, description, date, startTime, endTime, educationLevel } = req.body;
+  const token = req.headers.token;
+
+  try {
+      // Verify the token to get teacher's ID
+      const decoded = jwt.verify(token, 'your_secret_key'); // Replace 'your_secret_key' with your actual secret
+      const teacherId = decoded._id;
+
+      // Convert startTime and endTime to valid Date objects
+      const startDate = new Date(`${date}T${startTime}:00`);
+      const endDate = new Date(`${date}T${endTime}:00`);
+
+      // Fetch users with the selected education level
+      const participants = await userModule.find({
+          educationLevel: educationLevel,
+          _id: { $ne: teacherId }, // Exclude the teacher from the participants list
+      }).select('_id'); // Only fetch the IDs
+
+      // Map participant IDs for the session
+      const participantIds = participants.map((user) => user._id);
+
+      // Create the session with the teacher as the host and participants as filtered users
+      const session = await Session.create({
+          title,
+          description,
+          date,
+          startTime: startDate,
+          endTime: endDate,
+          hostUrl: `${req.protocol}://${req.get('host')}/session/${title}`,
+          teacher: teacherId,
+          participants: [teacherId, ...participantIds], // Add teacher and participants
+      });
+
+      res.status(201).json({
+          message: 'Session created successfully',
+          session,
+      });
+  } catch (err) {
+      console.error('Error creating session:', err);
+      res.status(500).json({ error: 'Error creating session', details: err.message });
+  }
 };
+
 
   
 
