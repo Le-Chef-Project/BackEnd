@@ -171,3 +171,5 @@ exports.editProfile = async (req, res) => {
         res.status(500).json({ message: 'Error updating profile', error: error.message });
     }
 };
+
+

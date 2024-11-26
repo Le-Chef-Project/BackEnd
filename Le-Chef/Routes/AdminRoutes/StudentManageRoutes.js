@@ -11,11 +11,14 @@ const { adminMiddleware } = require('../../Middleware/Admin');
 const { authenticateUser } = require('../../Middleware/Auth'); // Adjust the path as necessary
 const { editProfile } = require('../../Controllers/Admin/UserManagement/StudentManagement');
 
+const { getAdminProfile } = require('../../Controllers/Admin/UserManagement/AdminController');
 
 
 
 router.route('/AddStudents').post( adminMiddleware,addStudent);
 router.route('/ShowAllStudents').get(adminMiddleware,getAllStudents);
+router.route('/AdminProfile').get(adminMiddleware,getAdminProfile);
+
 router.route('/UpdateStudent/:id').put(adminMiddleware,updateStudent);
 router.route('/DeleteStudent/:id').delete(adminMiddleware,deleteStudent);
 router.put('/editProfile/:userId', adminMiddleware, upload.single('image'), editProfile);
