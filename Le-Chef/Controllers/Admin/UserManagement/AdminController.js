@@ -21,6 +21,7 @@ exports.getAdminProfile = async (req, res) => {
     // Return admin profile details
     const adminProfile = {
       username: admin.username,
+      _id: admin._id,
       email: admin.email,
       firstName: admin.firstName,
       lastName: admin.lastName,
