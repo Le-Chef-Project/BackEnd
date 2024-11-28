@@ -176,7 +176,7 @@ exports.getAdminDirectChats = async (req, res) => {
     // Find all direct chat rooms where the admin is a participant
     const directChats = await DirectChatMessage.find({
       participants: adminId,
-    }).populate('participants', 'username email'); // Populate participant details if needed
+    }).populate('participants', 'username email image'); // Populate participant details if needed
 
     res.status(200).json({ message: 'Direct chats retrieved successfully', directChats });
   } catch (error) {
