@@ -131,7 +131,7 @@ exports.getDirectMessages= asyncHandler(async (req, res) => {
       _id: chatRoomId,
       participants: userId,
     })
-      .populate('messages.sender', 'username firstName lastName')
+      .populate('messages.sender', 'username firstName lastName image')
       .select('messages')
       .lean();
 

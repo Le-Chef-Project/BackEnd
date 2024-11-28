@@ -241,29 +241,29 @@ exports.createGroup = async (req, res) => {
   };
 
 
-  //GET ALL STUDENTS OF A GROUP
+  // GET ALL STUDENTS OF A GROUP
 exports.getGroupMembers = async (req, res) => {
-    try {
-      // Extract and verify token (if needed for authentication)
-      const token = req.headers.token;
-      if (!token) return res.status(401).json({ message: 'No token provided' });
-      
-      const { groupId } = req.params;
-  
-      // Find the group and populate the members' details
-      const group = await Group.findById(groupId).populate('members', 'username');
-  
-      if (!group) {
-        return res.status(404).json({ message: 'Group not found' });
-      }
-  
-      // Return the members with selected attributes
-      res.status(200).json({
-        message: 'Group members retrieved successfully',
-        members: group.members
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Internal Server Error' });
+  try {
+    // Extract and verify token (if needed for authentication)
+    const token = req.headers.token;
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    const { groupId } = req.params;
+
+    // Find the group and populate the members' details with username and image
+    const group = await Group.findById(groupId).populate('members', 'username image');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
     }
-  };
+
+    // Return the members with selected attributes
+    res.status(200).json({
+      message: 'Group members retrieved successfully',
+      members: group.members,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};

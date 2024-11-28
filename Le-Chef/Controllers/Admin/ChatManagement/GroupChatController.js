@@ -14,6 +14,7 @@ exports.sendGroupMessage = [
     { name: 'images', maxCount: 10 },
     { name: 'documents', maxCount: 10 },
     { name: 'audio', maxCount: 1 },
+    { name: 'voiceNote', maxCount: 1 },  // New field for voice notes
   ]),
   async (req, res) => {
     try {
@@ -45,6 +46,7 @@ exports.sendGroupMessage = [
       const images = req.files.images || [];
       const documents = req.files.documents || [];
       const audio = req.files.audio ? req.files.audio[0] : null;
+      const voiceNote = req.files.voiceNote ? req.files.voiceNote[0] : null;
 
       const uploadToCloudinary = (file, folder, resourceType = 'image') => {
         return new Promise((resolve, reject) => {
@@ -63,6 +65,7 @@ exports.sendGroupMessage = [
         });
       };
 
+      // Upload images, documents, audio, and voice notes
       const uploadedImages = await Promise.all(images.map(file =>
         uploadToCloudinary(file, 'LE CHEF/Chat Uploads/Images', 'image')
       ));
@@ -73,6 +76,10 @@ exports.sendGroupMessage = [
 
       const uploadedAudio = audio ? await uploadToCloudinary(audio, 'LE CHEF/Chat Uploads/Audios', 'video') : null;
 
+      const uploadedVoiceNote = voiceNote 
+        ? await uploadToCloudinary(voiceNote, 'LE CHEF/Chat Uploads/Voice Notes', 'video') 
+        : null;
+
       let conversation = await GroupChatMessage.findOne({ group: groupId });
       const newMessage = {
         sender: senderId,
@@ -80,6 +87,7 @@ exports.sendGroupMessage = [
         images: uploadedImages,
         documents: uploadedDocuments,
         audio: uploadedAudio ? [uploadedAudio] : [],
+        voiceNotes: uploadedVoiceNote ? [uploadedVoiceNote] : [],  // Store voice note URL
         createdAt: Date.now(),
       };
 
@@ -101,6 +109,7 @@ exports.sendGroupMessage = [
         images: uploadedImages,
         documents: uploadedDocuments,
         audio: uploadedAudio ? [uploadedAudio] : [],
+        voiceNotes: uploadedVoiceNote ? [uploadedVoiceNote] : [],  // Update the lastMessage with the voice note
         createdAt: Date.now(),
       };
 
@@ -125,7 +134,6 @@ exports.sendGroupMessage = [
 
 
 
-
 exports.getGroupMessages = asyncHandler(async (req, res) => {
   try {
     const token = req.headers.token;
@@ -145,7 +153,7 @@ exports.getGroupMessages = asyncHandler(async (req, res) => {
 
     // Retrieve group chat messages, populate sender information, and filter out empty fields
     const conversation = await GroupChatMessage.findOne({ group: groupId })
-      .populate('messages.sender', 'username firstName lastName')
+      .populate('messages.sender', 'username firstName lastName image')
       .select('messages')
       .lean();
 
