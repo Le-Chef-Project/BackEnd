@@ -54,6 +54,9 @@ const userSchema = new mongoose.Schema({
     token: {
         type: String,
     },
+    PlayerId: {
+        type: String,
+    },
     image: {
         public_id: { type: String },
         url: { type: String },
