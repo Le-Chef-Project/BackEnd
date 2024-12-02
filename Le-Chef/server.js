@@ -74,7 +74,7 @@ app.use('/Quiz', quizroute);
 app.use('/UserQuiz', submitquizroute);
 app.use('/Chat', chatroute);
 app.use('/Pay',paymentroute);
-app.use('/Agora', Sessionsroute);
+app.use('/zoom', Sessionsroute);
 
 
 // Socket.IO Connection Handling
