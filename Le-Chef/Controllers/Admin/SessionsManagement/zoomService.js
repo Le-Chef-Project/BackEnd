@@ -49,6 +49,7 @@ exports.createZoomMeeting = async (req, res) => {
     const newSession = new Session({
       title,
       description,
+      level,
       date: currentDateTime.toDate(),
       hostUrl: zoomResponse.data.start_url,
       joinUrl: zoomResponse.data.join_url,
@@ -141,3 +142,35 @@ exports.joinZoomMeeting = async (req, res) => {
   }
 };
   
+exports.getStudentSessions = async (req, res) => {
+  try {
+    // Extract student ID from the token payload (assumes req.user is populated by auth middleware)
+    const studentId = req.user._id;
+
+    // Retrieve the student from the database to get their educational level
+    const student = await userModule.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const studentLevel = student.educationLevel;
+
+    if (!studentLevel) {
+      return res.status(400).json({ error: 'Student does not have an assigned educational level' });
+    }
+
+    // Find all sessions that match the student's educational level
+    const sessions = await Session.find({ level: studentLevel })
+      .populate('teacher', 'username') // Populate teacher details
+      .populate('participants', 'username'); // Optionally populate participants
+
+    res.status(200).json({
+      message: 'Sessions retrieved successfully',
+      sessions,
+    });
+  } catch (error) {
+    console.error('Error fetching student sessions:', error);
+    res.status(500).json({ error: 'An error occurred while retrieving sessions' });
+  }
+};

@@ -33,6 +33,11 @@ const sessionSchema = new mongoose.Schema({
       ref: 'User',
     },
   ],
+  level: {
+    type: String,
+    required: true, // Educational level of the session
+    enum: ['1', '2', '3'],
+  },
   createdAt: {
     type: Date,
     default: Date.now,
