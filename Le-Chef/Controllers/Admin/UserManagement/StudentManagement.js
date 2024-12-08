@@ -2,7 +2,7 @@ const User = require('../../../modules/UsersModule'); // Adjust the path as nece
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const cloudinary = require('../../../Util/Cloudinary');
-
+const Notification = require('../../../modules/NotificationsModule'); 
 
 // Function to add a new user (student)
 
@@ -40,6 +40,13 @@ exports.addStudent = async (req, res) => {
 
         // Save student to the database
         await student.save();
+
+         // Create a notification for the newly added student
+         await Notification.create({
+            message: `New student added:${username} FullName:${firstName} ${lastName}, Education Level: ${educationLevel}`,
+            type: 'user',
+            user: student._id, // Assuming the notification is for the admin or teacher
+        });
         res.status(201).json(student);
     } catch (error) {
         res.status(400).json({ error: error.message });

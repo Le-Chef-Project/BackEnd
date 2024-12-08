@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cloudinary = require('../../../Util/Cloudinary');
 const path = require('path'); // Import path module
 const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
+const Notification = require('../../../modules/NotificationsModule'); 
 
 // Create a new PDF document
 exports.createPDF = async (req, res) => {
@@ -41,7 +42,16 @@ exports.createPDF = async (req, res) => {
 
         // Save the PDF document to the database
         const savedPDF = await newPDF.save();
+
+        // Create the notification
+        await Notification.create({
+            message: `You have a new pdf: ${newPDF.title} - ${newPDF.description}!`,  // Include the pdf title in the message
+            type: 'pdf',
+            level:educationLevel
+        })
+
         res.status(201).json(savedPDF);
+        
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

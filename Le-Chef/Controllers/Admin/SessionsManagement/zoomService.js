@@ -3,7 +3,7 @@ const Session = require('../../../modules/SessionsModule'); // Adjust the path a
 const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 const mongoose = require('mongoose'); // Import mongoose for ObjectId conversion
 const moment = require('moment-timezone'); 
-
+const Notification = require('../../../modules/NotificationsModule'); 
 const axios = require('axios');  // Required to send requests to Zoom API
 
 exports.createZoomMeeting = async (req, res) => {
@@ -59,7 +59,15 @@ exports.createZoomMeeting = async (req, res) => {
 
     await newSession.save();
 
-    // 4. Return the meeting details to the client
+    // 4. Create a notification for the newly created Zoom meeting
+    await Notification.create({
+      message: `New Zoom Meeting Created: ${title}. Description: ${description}. Join at: ${zoomResponse.data.join_url}`,
+      type: 'meeting',
+      user: teacherId, // Assuming the notification is for the teacher
+      level:level
+    });
+
+    // 5. Return the meeting details to the client
     res.status(201).json({
       message: 'Meeting created successfully',
       session: newSession,

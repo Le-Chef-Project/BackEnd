@@ -7,7 +7,7 @@ const User = require('../../../modules/UsersModule');
 const cloudinary = require('cloudinary').v2;
 const PDF = require('../../../modules/PdfModule');
 const path = require('path');
-
+const Notification = require('../../../modules/NotificationsModule'); 
 
 
 exports.initiateCashPayment = async (req, res) => {
@@ -27,44 +27,50 @@ exports.initiateCashPayment = async (req, res) => {
         return res.status(404).json({ message: 'User not found' });
       }
   
-      // Determine content type
-      let amountToPay, contentType, content;
-      const video = await Video.findById(contentId);
-      if (video) {
-        amountToPay = video.amountToPay;
-        contentType = 'Video';
-        content = video;
-      } else {
-        const quiz = await Quiz.findById(contentId);
-        if (quiz) {
-          amountToPay = quiz.amountToPay;
-          contentType = 'Quiz';
-          content = quiz;
-        } else {
-          const pdf = await PDF.findById(contentId);
-          if (pdf) {
-            amountToPay = pdf.amountToPay;
-            contentType = 'PDF';
-            content = pdf;
-          }
-        }
-      }
-  
-      if (!content) {
-        return res.status(404).json({ message: 'Content not found' });
-      }
-  
-      // Create the cash payment request
-      const payment = new Payment({
-        user: userId,
-        amount: parseFloat(amountToPay),
-        status: 'pending',
-        method: 'Cash',
-        contentType,
-        contentId,
-      });
-  
-      await payment.save();
+       // Determine content type and get content details
+       let amountToPay, contentType, contentTitle;
+       const video = await Video.findById(contentId);
+       if (video) {
+           amountToPay = video.amountToPay;
+           contentType = 'Video';
+           contentTitle = video.title;  // Get video title
+       } else {
+           const quiz = await Quiz.findById(contentId);
+           if (quiz) {
+               amountToPay = quiz.amountToPay;
+               contentType = 'Quiz';
+               contentTitle = quiz.title;  // Get quiz title
+           } else {
+               const pdf = await PDF.findById(contentId);
+               if (pdf) {
+                   amountToPay = pdf.amountToPay;
+                   contentType = 'PDF';
+                   contentTitle = pdf.title;  // Get PDF title
+               }
+           }
+       }
+
+       if (!contentTitle) {
+           return res.status(404).json({ message: 'Content not found' });
+       }
+
+       // Create the cash payment request
+       const payment = new Payment({
+           user: userId,
+           amount: parseFloat(amountToPay),
+           status: 'pending',
+           method: 'Cash',
+           contentType,
+           contentId,
+       });
+
+       await payment.save();
+
+       // Create the notification with user name and content title
+       await Notification.create({
+           message: `New Cash Payment Request by ${user.username} for ${contentTitle}.Amount : $${amountToPay}`,
+           type: 'payment',
+       });
   
       res.json({ message: 'Cash payment request submitted successfully, awaiting admin approval', paymentId: payment._id });
     } catch (error) {

@@ -7,7 +7,7 @@ const User = require('../../../modules/UsersModule');
 const cloudinary = require('cloudinary').v2;
 const PDF = require('../../../modules/PdfModule');
 const path = require('path');
-
+const Notification = require('../../../modules/NotificationsModule'); 
 exports.initiateEWalletPayment = async (req, res) => {
   try {
     // Validate input
@@ -32,38 +32,37 @@ exports.initiateEWalletPayment = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-
     // Determine content type (Video, Quiz, or PDF) and retrieve the corresponding content details
     let amountToPay;
     let contentType;
-    let content;
+    let contentTitle;
 
     // Check for video content first
     const video = await Video.findById(contentId);
     if (video) {
       amountToPay = video.amountToPay;
       contentType = 'Video';
-      content = video;
+      contentTitle = video.title;  // Get the video title
     } else {
       // Check for quiz content
       const quiz = await Quiz.findById(contentId);
       if (quiz) {
         amountToPay = quiz.amountToPay;
         contentType = 'Quiz';
-        content = quiz;
+        contentTitle = quiz.title;  // Get the quiz title
       } else {
         // Check for PDF content
         const pdf = await PDF.findById(contentId);
         if (pdf) {
           amountToPay = pdf.amountToPay;
           contentType = 'PDF';
-          content = pdf;
+          contentTitle = pdf.title;  // Get the PDF title
         }
       }
     }
 
     // If content not found, return error
-    if (!content) {
+    if (!contentTitle) {
       return res.status(404).json({ message: 'Content not found' });
     }
 
@@ -86,6 +85,12 @@ exports.initiateEWalletPayment = async (req, res) => {
     });
 
     await payment.save();
+
+    // Create the notification
+    await Notification.create({
+      message: `New E-Wallet Payment Request by ${user.username} for ${contentTitle}`,
+      type: 'payment',
+    });
 
     // Return success response
     res.json({ message: 'Payment initiated successfully, awaiting approval from teacher', paymentId: payment._id });

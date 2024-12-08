@@ -3,22 +3,22 @@ const cloudinary = require('../../../Util/Cloudinary');
 const path = require('path'); // Import path module
 const Video = require('../../../modules/VideosModule'); // Adjust the path to your Video model
 const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
-
+const Notification = require('../../../modules/NotificationsModule'); 
 
 
 // Create a new video document
 exports.UploadVideo = async (req, res) => {
     try {
-        const { title, description, amountToPay, paid, educationLevel } = req.body; // Destructure new fields from request body
-        const file = req.file; // Get the uploaded file
+        const { title, description, amountToPay, paid, educationLevel } = req.body;
+        const file = req.file;  // Get the uploaded file
 
         if (!file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
         const token = req.headers.token;
-        const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
-        const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
+        const decoded = jwt.verify(token, 'your_secret_key');  // Replace with your actual secret key
+        const teacherId = decoded._id;  // Assuming '_id' contains the teacher's ID
 
         // Extract the original filename without extension
         const originalName = path.parse(file.originalname).name;
@@ -27,30 +27,36 @@ exports.UploadVideo = async (req, res) => {
         const uploadResult = await cloudinary.uploader.upload(file.path, {
             resource_type: 'video',
             folder: 'le chef/videos',
-            public_id: originalName, // Set the public_id to retain the original filename
-            upload_preset: 'ml_default', // Optional: Use if you have upload presets
+            public_id: originalName,
+            upload_preset: 'ml_default',  // Optional: Use if you have upload presets
         });
 
-        // Create a new video document with the URL returned by Cloudinary
+        // Create the video object
         const newVideo = new Video({
             title,
             description,
-            url: uploadResult.secure_url, // Use the Cloudinary URL for the video
-            teacher: teacherId, // Use the teacher's existing ID from the token
-            amountToPay: paid ? amountToPay : undefined, // Only set amountToPay if the video is paid
-            paid: paid || true, // Default to false if not specified
-            isLocked: paid || true, // Lock the video if it's paid
-            educationLevel // Add the education level
+            url: uploadResult.secure_url,  // Use the Cloudinary URL for the video
+            teacher: teacherId,
+            amountToPay: paid ? amountToPay : undefined,
+            paid: paid || true,
+            isLocked: paid || true,
+            educationLevel
         });
 
-        // Save the video document to the database
-        const savedVideo = await newVideo.save();
-        res.status(201).json(savedVideo);
+        await newVideo.save();
+
+        // Create the notification
+        await Notification.create({
+            message: `New Video Uploaded!${newVideo.title}!`,
+            type: 'video',
+            level:educationLevel
+        });
+
+        res.status(201).json(newVideo);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
-
 
 
 // Get all videos

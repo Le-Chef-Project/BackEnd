@@ -1,17 +1,16 @@
 const Quiz = require('../../../modules/QuizzesModule');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
+const Notification = require('../../../modules/NotificationsModule'); 
 
 exports.AddQuiz = async (req, res) => {
     try {
         const { title, questions, hours, minutes, amountToPay, paid, educationLevel, Unit } = req.body;
-
-        // Extract the token from the request headers
         const token = req.headers.token;
-        const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
-        const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
+        const decoded = jwt.verify(token, 'your_secret_key');  // Replace with your actual secret key
+        const teacherId = decoded._id;  // Assuming '_id' contains the teacher's ID
 
-        // Construct the quiz object with all necessary fields
+        // Create the quiz
         const quiz = new Quiz({
             title,
             questions: questions.map(q => ({
@@ -19,18 +18,26 @@ exports.AddQuiz = async (req, res) => {
                 options: q.options,
                 answer: q.answer
             })),
-            teacher: teacherId, // Use the teacher's existing ID from the token
+            teacher: teacherId,
             duration: {
                 hours: parseInt(hours),
                 minutes: parseInt(minutes),
             },
-            amountToPay: paid ? parseFloat(amountToPay) : undefined, // Set amountToPay only if pay is true
-            paid: paid, // Boolean indicating if payment is required
-            educationLevel: parseInt(educationLevel), // Ensure education level is stored as a number
-            Unit: parseInt(Unit), // Ensure Unit is stored as a number
+            amountToPay: paid ? parseFloat(amountToPay) : undefined,
+            paid: paid,
+            educationLevel: parseInt(educationLevel),
+            Unit: parseInt(Unit),
         });
 
         await quiz.save();
+
+        // Create the notification
+        await Notification.create({
+            message: `You have a new quiz: ${quiz.title}!`,  // Include the quiz title in the message
+            type: 'quiz',
+            level:educationLevel
+        });
+
         res.status(201).json(quiz);
     } catch (error) {
         res.status(400).json({ error: error.message });

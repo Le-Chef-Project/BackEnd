@@ -1,28 +1,38 @@
 const noteModel = require('../../../modules/NotesModule');
 const userModule = require('../../../modules/UsersModule');
-
-const mongoose = require('mongoose');
+const Notification = require('../../../modules/NotificationsModule'); 
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken'); // Assuming you're using JWT for tokens
 
 
 exports.AddNote = async (req, res) => {
     try {
+        const { content, educationLevel } = req.body;
+        const token = req.headers.token;
+        const decoded = jwt.verify(token, 'your_secret_key');  // Replace with your actual secret key
+        const teacherId = decoded._id;  // Assuming '_id' contains the teacher's ID
 
-      const {content,educationLevel} = req.body;
-      const token = req.headers.token
-      const decoded = jwt.verify(token, 'your_secret_key'); // Replace with your actual secret key
-      const teacherId = decoded._id; // Assuming '_id' contains the teacher's ID
-      const note = new noteModel({
-        content,
-        educationLevel,
-        teacher: teacherId })// Use the teacher's existing ID from the token});
-      await note.save();
-      res.status(201).json(note);
+        // Create the note
+        const note = new noteModel({
+            content,
+            educationLevel,
+            teacher: teacherId
+        });
+
+        await note.save();
+
+        // Create the notification
+        await Notification.create({
+            message: 'New Note Added!',
+            type: 'note',
+            level:educationLevel
+        });
+
+        res.status(201).json(note);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+        res.status(400).json({ error: error.message });
     }
-  };
+};
 
 
   exports.getAllNotes = async (req, res) => {

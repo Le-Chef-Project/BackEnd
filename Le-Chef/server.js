@@ -17,6 +17,7 @@ const sessions = require('./modules/SessionsModule')
 const videos = require('./modules/VideosModule')
 const notes = require('./modules/NotesModule')
 const quizresult = require('./modules/StudentQuizResult')
+const Notification = require('./modules/NotificationsModule')
 const noteroute = require('./Routes/AdminRoutes/ContentRoutes');
 const pdfroute = require('./Routes/AdminRoutes/ContentRoutes');
 const videoroute = require('./Routes/AdminRoutes/ContentRoutes');
@@ -27,6 +28,8 @@ const submitquizroute = require('./Routes/UserRoutes/AnswerQuizRoute');
 const chatroute = require('./Routes/AdminRoutes/ChatRoutes');
 const paymentroute= require('./Routes/AdminRoutes/PaymentRoute');
 const Sessionsroute = require('./Routes/AdminRoutes/SessionsRoutes');
+const UserNotificationroute = require('./Routes/UserRoutes/UserNotifications');
+const AdminNotificationroute = require('./Routes/AdminRoutes/AdminNotifications');
 
 
 
@@ -75,6 +78,7 @@ app.use('/UserQuiz', submitquizroute);
 app.use('/Chat', chatroute);
 app.use('/Pay',paymentroute);
 app.use('/zoom', Sessionsroute);
+app.use('/Notifications',UserNotificationroute,AdminNotificationroute);
 
 
 // Socket.IO Connection Handling
