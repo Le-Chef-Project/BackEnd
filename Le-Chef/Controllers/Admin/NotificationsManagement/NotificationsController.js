@@ -19,11 +19,18 @@ exports.getStudentNotifications = async (req, res) => {
 
     const educationLevel = user.educationLevel;
 
-    // Get notifications for this user based on their education level
+    // Get notifications for this user based on their education level and type
     const notifications = await Notification.find({
-      $or: [
-        { level: { $exists: false } },  // Include notifications without a level field
-        { level: educationLevel }  // Include notifications with the student's education level
+      $and: [
+        {
+          type: { $in: ['note', 'video', 'pdf', 'quiz', 'meeting'] }, // Filter by type
+        },
+        {
+          $or: [
+            { level: { $exists: false } },  // Include notifications without a level field
+            { level: educationLevel }  // Include notifications with the student's education level
+          ]
+        }
       ]
     }).sort({ createdAt: -1 });  // Sort notifications by the latest
 
@@ -34,6 +41,7 @@ exports.getStudentNotifications = async (req, res) => {
     res.status(500).json({ message: 'An error occurred while fetching notifications' });
   }
 };
+
 
 
 exports.getAllNotifications = async (req, res) => {
